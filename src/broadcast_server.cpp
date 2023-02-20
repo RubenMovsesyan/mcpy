@@ -6,7 +6,7 @@
 
 
 // Start a udp server on the broadcast ip address
-BroadcastServer::BroadcastServer(int port, char* message) : UDPServer(port, "10.0.0.255"){
+BroadcastServer::BroadcastServer(int port, char* message) : UDPServer(port, "10.0.0.255") {
     m_message = message;
 
     if(setsockopt(m_sock_fd, SOL_SOCKET, SO_BROADCAST, m_message, sizeof(m_message)) < 0) {
