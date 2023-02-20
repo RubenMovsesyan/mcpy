@@ -11,19 +11,19 @@ int main() {
     // printf("This is the server starting\n");
     // TcpServer server = TcpServer("10.0.0.147", 8080);
     // server.startListen();
-    // UDPServer server(8080);
+    UDPServer server(8080);
 
-    // char* buffer;
+    char* buffer;
 
-    // while (true) {
-    //     buffer = server.recieve();
-    //     server.send("The server is sending this message.");
-    // }
-    BroadcastServer server(8080, "Hi, This is the raspberry pi!");
+    while (true) {
+        buffer = server.recieve();
+	//printf("Client sent: %s\n", buffer);
+    }
+    // BroadcastServer server(8080, "Hi, This is the raspberry pi!");
     
-    bool running = true;
+    // bool running = true;
 
-    server.broadcast(&running, 1000);
+    // server.broadcast(&running, 1000);
 
     return 0;
 }
