@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_TCP_SERVER_LINUX
+#define HTTP_TCP_SERVER_LINUX
 
 // includes for TcpServer
 #include <sys/socket.h>
@@ -32,3 +33,5 @@ namespace http {
             void sendResponse();
     };
 }
+
+#endif

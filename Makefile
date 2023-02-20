@@ -1,34 +1,32 @@
-IDIR = ./include
-CC = g++
-CFLAGS = -I $(IDIR)
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+CC := g++
 
-ODIR = ./obj
-LDIR = ./lib
-SDIR = ./src
+EXE := $(BIN_DIR)/mcpy
 
-LIBS = -lm
+SRC := $(wildcard $(SRC_DIR)/*.cpp)
+OBJ := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-# _DEPS = http_tcp_server_linux.h udp_server.h
-_DEPS = udp_server.h
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+CPPFLAGS := -Iinclude -MMD -MP
+CFLAGS := -Wall
+LDFLAGS := -Llib
+LDLIBS := -lm
 
-# _OBJ = http_tcp_server_linux.o udp_server.o
-_OBJ = udp_server.o
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+.PHONY: all clean
 
-# _SRC = http_tcp_server_linux.cpp udp_server.cpp
-_SRC = udp_server.cpp
-SRC = $(patsubst %,$(SDIR)/%,$(_SRC))
+all: $(EXE)
 
-MAIN = src/main.cpp
+$(EXE): $(OBJ) | $(BIN_DIR)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-$(ODIR)/%.o: $(SRC) $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-out/mcpy: $(OBJ) $(MAIN)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
-
-.PHONY: clean
+$(BIN_DIR) $(OBJ_DIR):
+	mkdir -p $@
 
 clean:
-	rm -f $(ODIR)/*.o out/mcpy
+	@$(RM) -rv $(BIN_DIR) $(OBJ_DIR)
+
+-include $(OBJ:.o=.d)
