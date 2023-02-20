@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
+#include <fstream>
 
 
 namespace {
@@ -109,7 +110,22 @@ namespace http {
 
     // TODO: edit this function to create the webpage for the server
     std::string TcpServer::buildResponse() {
-        std::string html_file = "<DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
+        // std::string html_file = "<DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
+        std::string html_file;
+
+        std::string file_name = "res/index.html";
+
+        std::ifstream input_stream(file_name);
+
+        if (!input_stream) exitWithError("Cannot read index file");
+
+        std::string line;
+
+        while(getline(input_stream, line)) {
+            html_file.append(line);
+        }
+
+
         std::ostringstream ss;
         ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << html_file.size() << "\n\n" << html_file;
 
