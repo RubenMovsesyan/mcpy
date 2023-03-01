@@ -42,6 +42,10 @@ UDPServer::UDPServer(int port, char* ip_address) {
         exitWithError("socket creation failed");
     }
     log("Socket Created");
+	
+    int broadcast = 1;
+    setsockopt(m_sock_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+    log("Broadcast setup");
 
     memset(&m_server_addr, 0, sizeof(m_server_addr));
     memset(&m_client_addr, 0, sizeof(m_client_addr));
@@ -49,6 +53,7 @@ UDPServer::UDPServer(int port, char* ip_address) {
     // Filling server information
     m_server_addr.sin_family              = AF_INET; // IPv4
     m_server_addr.sin_addr.s_addr         = inet_addr(m_ip_address);
+    //m_server_addr.sin_addr.s_addr 	  = htonl(INADDR_ANY);
     m_server_addr.sin_port                = htons(m_port);
 
     // Bind the socket with the server address
@@ -74,6 +79,6 @@ char* UDPServer::recieve() {
 void UDPServer::send(char* message) {
     // send the message the client
     sendto(m_sock_fd, (const char*) message, strlen(message), MSG_CONFIRM, (const struct sockaddr*) &m_client_addr, m_sock_len);
-
-    log("Message sent to client");
+    printf("Sent: %s to %s\n", message, m_ip_address);
+    // log("Message sent to client");
 }

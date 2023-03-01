@@ -9,8 +9,12 @@ class BroadcastServer : public UDPServer {
         ~BroadcastServer();
 
         void broadcast(bool* running, int delay);
+
+        void setServerIP();
+        void broadcastIP(bool* running, int delay);
     private:
-        char* m_message;
+        char*                       m_message;
+        char                        m_ip[16];
 };
 
 #endif

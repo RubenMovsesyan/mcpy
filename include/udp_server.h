@@ -26,12 +26,12 @@ class UDPServer {
         // send will send the specified message the client
         void send(char* message);
     protected:
-        int m_port;
-        struct sockaddr_in m_server_addr, m_client_addr;
-        socklen_t m_sock_len;
-        int m_sock_fd;
-        char m_buffer[BUFFER_SIZE];
-        char* m_ip_address;
+        int                         m_port;
+        struct sockaddr_in          m_server_addr, m_client_addr;
+        socklen_t                   m_sock_len;
+        int                         m_sock_fd;
+        char                        m_buffer[BUFFER_SIZE];
+        char*                       m_ip_address;
 
         UDPServer(int port, char* ip_address);
 };
