@@ -1,5 +1,5 @@
-#ifndef BROADCAST_SERVER
-#define BROADCAST_SERVER
+#ifndef BROADCAST_SERVER_H
+#define BROADCAST_SERVER_H
 
 #include "udp_server.h"
 

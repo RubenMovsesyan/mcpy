@@ -71,7 +71,7 @@ char* UDPServer::recieve() {
 
     n = recvfrom(m_sock_fd, (char*)m_buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr*) &m_client_addr, &m_sock_len);
     m_buffer[n] = '\0';
-    printf("Client: %s\n", m_buffer);
+    // printf("Client: %s\n", m_buffer);
 
     return m_buffer;
 }

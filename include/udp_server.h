@@ -1,5 +1,5 @@
-#ifndef UDP_SERVER
-#define UDP_SERVER
+#ifndef UDP_SERVER_H
+#define UDP_SERVER_H
 
 // #include <its/stdc++.h>
 #include <stdlib.h>
