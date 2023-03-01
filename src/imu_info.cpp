@@ -53,3 +53,12 @@ void IMUInfo::print() {
     printf("Rotation:\n");
     printf("\tX: %05.2f\n\tY: %05.2f\n\tZ: %05.2f\n", m_gyr_x, m_gyr_y, m_gyr_z);
 }
+
+
+float IMUInfo::getAX() { return m_acc_x; }
+float IMUInfo::getAY() { return m_acc_y; }
+float IMUInfo::getAZ() { return m_acc_z; }
+
+float IMUInfo::getGX() { return m_gyr_x; }
+float IMUInfo::getGY() { return m_gyr_y; }
+float IMUInfo::getGZ() { return m_gyr_z; }

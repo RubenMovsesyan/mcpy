@@ -11,6 +11,16 @@ class IMUInfo {
         IMUInfo(std::string string_to_parse);
 
         void print();
+
+
+        // getter functions for IMU info class
+        float getAX();
+        float getAY();
+        float getAZ();
+
+        float getGX();
+        float getGY();
+        float getGZ();
     private:
         // accelerometer values
         float m_acc_x, m_acc_y, m_acc_z;
