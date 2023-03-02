@@ -43,15 +43,17 @@ IMUInfo::IMUInfo(std::string string_to_parse) {
     m_acc_z = std::stof(split_string[ACC_Z_IND]);
 
     m_gyr_x = std::stof(split_string[GYR_X_IND]);
-    m_gyr_x = std::stof(split_string[GYR_Y_IND]);
-    m_gyr_x = std::stof(split_string[GYR_Z_IND]);
+    m_gyr_y = std::stof(split_string[GYR_Y_IND]);
+    m_gyr_z = std::stof(split_string[GYR_Z_IND]);
 }
 
 void IMUInfo::print() {
     printf("Acceleration:\n");
-    printf("\tX: %05.2f\n\tY: %05.2f\n\tZ: %05.2f\n", m_acc_x, m_acc_y, m_acc_z);
+    // printf("\tX: %05.2f\n\tY: %05.2f\n\tZ: %05.2f\n", m_acc_x, m_acc_y, m_acc_z);
+    printf("\tX: %f\n\tY: %f\n\tZ: %f\n", m_acc_x, m_acc_y, m_acc_z);
     printf("Rotation:\n");
-    printf("\tX: %05.2f\n\tY: %05.2f\n\tZ: %05.2f\n", m_gyr_x, m_gyr_y, m_gyr_z);
+    // printf("\tX: %05.2f\n\tY: %05.2f\n\tZ: %05.2f\n", m_gyr_x, m_gyr_y, m_gyr_z);
+    printf("\tX: %f\n\tY: %f\n\tZ: %f\n", m_gyr_x, m_gyr_y, m_gyr_z);
 }
 
 
