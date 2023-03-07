@@ -18,39 +18,39 @@
 
 // my include libraries
 // #include "http_tcp_server_linux.h"
-// #include "udp_server.h"
+#include "udp_server.h"
 // #include "broadcast_server.h"
 #include "imu_info.h"
 
 int main() {    
-    // UDPServer server(8080);
+    UDPServer server(8080);
 
-    // char* buffer;
+    char* buffer;
 
-    // while (true) {
-    //     buffer = server.recieve();
-	//     printf("%s", buffer);
+    while (true) {
+        buffer = server.recieve();
+	    printf("%s", buffer);
+    }
+
+    // std::vector<IMUInfo> imu_info;
+
+    // std::fstream new_file;
+    
+    // new_file.open("res/short_standing_still.imuinfo");
+
+    // if (new_file.is_open()) {
+    //     std::string sa;
+
+    //     while (getline(new_file, sa)) {
+    //         imu_info.push_back(IMUInfo(sa));
+    //     }
     // }
 
-    std::vector<IMUInfo> imu_info;
+    // new_file.close();
 
-    std::fstream new_file;
-    
-    new_file.open("res/short_standing_still.imuinfo");
-
-    if (new_file.is_open()) {
-        std::string sa;
-
-        while (getline(new_file, sa)) {
-            imu_info.push_back(IMUInfo(sa));
-        }
-    }
-
-    new_file.close();
-
-    for (int i = 0; i < imu_info.size(); i++) {
-        imu_info[i].print();
-    }
+    // for (int i = 0; i < imu_info.size(); i++) {
+    //     imu_info[i].print();
+    // }
 
     return 0;
 }
