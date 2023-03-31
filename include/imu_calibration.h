@@ -17,6 +17,8 @@ class IMUCalibration {
         //                          This calibrates which direction is up based on how the user is holding it
         bool                        calibrateGrav(IMUInfo inf);
 
+        bool                        isCalibrated();
+
         //                          Once the bias is calculated it can be obtained with the following functions
         Vector3                     getBias();
         float                       getBiasX();

@@ -42,6 +42,7 @@ void deviceReader() {
         // convert the raw string to IMUInfo before queuing
         inf = IMUInfo(buffer);
         con_queue.enq(inf);
+        inf.printOneLineAcc();
     }
 }
 

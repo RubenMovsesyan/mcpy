@@ -28,6 +28,20 @@ bool IMUCalibration::calibrateZ(IMUInfo inf) {
     return calibration_z_set;
 }
 
+bool IMUCalibration::calibrateGrav(IMUInfo inf) {
+    if (!calibration_x_set || !calibration_y_set || !calibration_z_set) { return false; }
+
+    grav_vec.x = bias_vec.x * inf.getAX();
+    grav_vec.y = bias_vec.y * inf.getAY();
+    grav_vec.z = bias_vec.z * inf.getAZ();
+    calibration_grav_set = true;
+    return calibration_grav_set;
+}
+
+bool IMUCalibration::isCalibrated() {
+    return calibration_x_set && calibration_y_set && calibration_z_set && calibration_grav_set;
+}
+
 // Getters for the bias
 Vector3 IMUCalibration::getBias() { return bias_vec; }
 float IMUCalibration::getBiasX() { return bias_vec.x; }
@@ -39,13 +53,3 @@ Vector3 IMUCalibration::getGrav() { return grav_vec; }
 float IMUCalibration::getGravX() { return grav_vec.x; }
 float IMUCalibration::getGravY() { return grav_vec.y; }
 float IMUCalibration::getGravZ() { return grav_vec.z; }
-
-bool IMUCalibration::calibrateGrav(IMUInfo inf) {
-    if (!calibration_x_set || !calibration_y_set || !calibration_z_set) { return false; }
-
-    grav_vec.x = bias_vec.x * inf.getAX();
-    grav_vec.y = bias_vec.y * inf.getAY();
-    grav_vec.z = bias_vec.z * inf.getAZ();
-    calibration_grav_set = true;
-    return calibration_grav_set;
-}

@@ -1,16 +1,50 @@
 #include <stdio.h>
+#include "mcpy_setup.h"
 #include <thread>
-#include <vector>
-#include <fstream>
+// #include <vector>
+// #include <fstream>
 
 // my include libraries
 // #include "http_tcp_server_linux.h"
-#include "udp_server.h"
+// #include "udp_server.h"
 // #include "broadcast_server.h"
 // #include "imu_info.h"
-#include "kinematics.h"
+// #include "kinematics.h"
 
-int main() {    
+int main() {
+    mcpy_init();
+
+    std::thread reader_thread(deviceReader);
+
+    // calibration phase
+    while (!imu_calibration.isCalibrated()) {
+        char c;
+
+        scanf("                             %c", &c);
+
+        switch (c) {
+            case 'x':
+                calibrateX();
+                break;
+            case 'y':
+                calibrateY();
+                break;
+            case 'z':
+                calibrateZ();
+                break;
+            case 'g':
+                calibrateGrav();
+                break;
+            default:
+                break;
+        }
+    }
+
+    std::thread updater_thread(posUpdater);
+
+    reader_thread.join();
+    updater_thread.join();
+
     // UDPServer server(8080);
 
     // char* buffer;
@@ -22,30 +56,31 @@ int main() {
 
 
     // Temporary for testing 3D motion tracking
-    std::vector<IMUInfo> imu_info;
-    Kinematics k = Kinematics();
+    // std::vector<IMUInfo> imu_info;
+    // Kinematics k = Kinematics();
 
-    std::fstream new_file;
+    // std::fstream new_file;
     
-    new_file.open("res/short_standing_still.imuinfo");
+    // new_file.open("res/short_standing_still.imuinfo");
 
-    if (new_file.is_open()) {
-        std::string sa;
+    // if (new_file.is_open()) {
+    //     std::string sa;
 
-        while (getline(new_file, sa)) {
-            imu_info.push_back(IMUInfo(sa));
-        }
-    }
+    //     while (getline(new_file, sa)) {
+    //         imu_info.push_back(IMUInfo(sa));
+    //     }
+    // }
 
-    new_file.close();
+    // new_file.close();
 
-    for (int i = 0; i < imu_info.size(); i++) {
-        k.addAcc(imu_info[i]);
-        k.printKin();
-    }
+    // for (int i = 0; i < imu_info.size(); i++) {
+    //     k.addAcc(imu_info[i]);
+    //     k.printKin();
+    // }
 
-    printf("Size: %d\n", imu_info.size());
+    // printf("Size: %d\n", imu_info.size());
     // Temporary for testing 3D motion tracking
+
 
     return 0;
 }

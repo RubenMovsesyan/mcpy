@@ -17,6 +17,8 @@ class IMUInfo {
 
         void                        setCalibration(IMUCalibration cal);
         void                        print();
+
+        void                        printOneLineAcc();
         // These functions should only be used for calibration purposes 
         // ----
         void                        addInf(IMUInfo inf);
