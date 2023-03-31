@@ -2,12 +2,7 @@
 #define KINEMATICS_H
 
 #include "imu_info.h"
-
-// struct for handling 3D vectors
-// TODO: possibly create separate class with vector math functions
-struct Vector3 {
-    float x, y, z;
-};
+#include "vector3.h"
 
 class Kinematics {
     public:
