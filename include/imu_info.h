@@ -1,7 +1,6 @@
 #ifndef IMU_INFO_H
 #define IMU_INFO_H
 
-#include "imu_calibration.h"
 #include "vector3.h"
 #include <string>
 
@@ -15,7 +14,9 @@ class IMUInfo {
         // This is the parser contructor
         IMUInfo(std::string string_to_parse);
 
-        void                        setCalibration(IMUCalibration cal);
+        // Cant include imu_calibration in this file
+        // Oops <(O_O)>
+        void                        setCalibration(Vector3 grav_vec, Vector3 bias_vec);
         void                        print();
 
         void                        printOneLineAcc();
@@ -43,7 +44,7 @@ class IMUInfo {
         // float                       m_gyr_x, m_gyr_y, m_gyr_z;
         Vector3                     m_gyr;
 
-        IMUCalibration              m_cal;
+        // IMUCalibration              m_cal;
 };
 
 #endif

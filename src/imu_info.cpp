@@ -48,16 +48,23 @@ IMUInfo::IMUInfo(std::string string_to_parse) {
     m_gyr.z = std::stof(split_string[GYR_Z_IND]);
 }
 
-void IMUInfo::setCalibration(IMUCalibration cal) {
-    m_cal = cal;
+void IMUInfo::setCalibration(Vector3 grav_vec, Vector3 bias_vec) {
+    // m_cal = cal;
 
-    m_acc.x *= m_cal.getBiasX();
-    m_acc.y *= m_cal.getBiasY();
-    m_acc.z *= m_cal.getBiasZ();
+    // m_acc.x *= m_cal.getBiasX();
+    // m_acc.y *= m_cal.getBiasY();
+    // m_acc.z *= m_cal.getBiasZ();
 
-    m_acc.x -= m_cal.getGravX();
-    m_acc.y -= m_cal.getGravY();
-    m_acc.z -= m_cal.getGravZ();
+    // m_acc.x -= m_cal.getGravX();
+    // m_acc.y -= m_cal.getGravY();
+    // m_acc.z -= m_cal.getGravZ();
+    m_acc.x *= bias_vec.x;
+    m_acc.y *= bias_vec.y;
+    m_acc.z *= bias_vec.z;
+
+    m_acc.x -= grav_vec.x;
+    m_acc.y -= grav_vec.y;
+    m_acc.z -= grav_vec.z;
 
     // Might need to implement the same thing for attitude once that is figured out
 }
