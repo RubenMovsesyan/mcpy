@@ -14,6 +14,8 @@ class CQueue {
         void enq(T e);
         T deq();
 
+        void clear();
+
         int size();
     
     private:

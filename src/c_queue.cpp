@@ -32,7 +32,6 @@ void CQueue<T>::enq(T e) {
 template <class T>
 T CQueue<T>::deq() {
     T ret;
-
     // while the queue is empty spin
     while (size == 0) { std::this_thread::yield(); }
     // store as temp var to save time
@@ -41,6 +40,13 @@ T CQueue<T>::deq() {
     ret = m_buffer[t];
     m_tail.store((t + 1) % CQUEUE_SIZE);
     return ret;
+}
+
+// This function might not be thread safe
+// TAKE CAUTION WHEN USING
+template <class T>
+void CQueue<T>::clear() {
+    m_head.store(m_tail.load());
 }
 
 template <class T>
