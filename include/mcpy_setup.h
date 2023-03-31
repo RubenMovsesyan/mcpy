@@ -14,9 +14,6 @@
 #include "kinematics.h"
 #include <atomic>
 
-// debug
-#include <stdio.h>
-
 #define CALIBRATION_ACCURACY        200
 
 // global varaibles bad >:( find better way to do this
@@ -40,15 +37,14 @@ void deviceReader() {
 
     // while mcpy is running we will take all data that is recieved from the server
     // and enqueue it into our buffer
-    printf("Here 1\n");
     while (mcpy_running.load()) {
         buffer = server.recieve();
         // convert the raw string to IMUInfo before queuing
         inf = IMUInfo(buffer);
         con_queue.enq(inf);
-        inf.printOneLineAcc();
+
+        if (!imu_calibration.isCalibrated()) { inf.printOneLineAcc(); }
     }
-    printf("Here 2\n");
 }
 
 // This takes info from the queue and updates our current position based on that

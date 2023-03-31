@@ -77,8 +77,13 @@ void IMUInfo::print() {
     // printf("\tX: %f\n\tY: %f\n\tZ: %f\n", m_gyr_x, m_gyr_y, m_gyr_z);
 }
 
+// FIXME: this print doesn't behave as expected
 void IMUInfo::printOneLineAcc() {
-    printf("\rX: %05.2f Y: %05.2f Z: %05.2f | ");
+    printf("\rX: %05.2f Y: %05.2f Z: %05.2f | ",
+        m_acc.x,
+        m_acc.y,
+        m_acc.z
+    );
 }
 
 void IMUInfo::addInf(IMUInfo inf) {
