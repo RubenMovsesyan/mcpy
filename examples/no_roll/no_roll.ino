@@ -89,7 +89,7 @@ void loop() {
   );
   Serial.println(print_str);
 
-  if (error_vector[0] >= 0) {
+  if (error_vector[0] >= 180) {
     analogWrite(RIGHT_MOTOR, error_vector[0]);
     analogWrite(LEFT_MOTOR, 0);
   } else {
@@ -97,7 +97,7 @@ void loop() {
     analogWrite(LEFT_MOTOR, fabs(error_vector[0]));
   }
 
-  if (error_vector[1] >= 0) {
+  if (error_vector[2] >= 180) {
     analogWrite(UP_MOTOR, error_vector[1]);
     analogWrite(DOWN_MOTOR, 0);
   } else {
