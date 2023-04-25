@@ -5,11 +5,11 @@
 #include <BLE2902.h>
 
 // WiFi includes
-// #include <WiFi.h>
-// #include <WiFiUdp.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
 
 // Other includes
-#include <Wire.h>
+// #include <Wire.h>
 
 #define SSID "ESP32"
 #define PASS "password"
@@ -20,7 +20,7 @@
 
 // packet size from periperhals
 // can be changed later
-#define PACKET_SIZE 512
+#define PACKET_SIZE 256
 
 #define UDP_PORT 8080
 
@@ -29,38 +29,38 @@ BLEServer*                      pServer = NULL;
 BLECharacteristic*              pCharacteristic = NULL;
 bool                            deviceConnected = false;
 bool                            oldDeviceConnected = false;
-std::string                     value = "Hello, World!\0";
+std::string                     value;
 
 // BLE Callback functions
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
     deviceConnected = true;
-    Serial.println("Connected to BLE device");
+    // Serial.println("Connected to BLE device");
   }
 
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
-    Serial.println("Disconnected from BLE device");
+    // Serial.println("Disconnected from BLE device");
   }
 };
 
 // WiFi globals
-// WiFiUDP udp;
+WiFiUDP udp;
 
-// void setupWiFi() {
-//   // Set up wifi
-//   WiFi.softAP(SSID, PASS);
-//   Serial.println("Access point started");
-//   Serial.print("SSID: ");
-//   Serial.println(SSID);
-//   Serial.print("IP address: ");
-//   Serial.println(WiFi.softAPIP());
+void setupWiFi() {
+  // Set up wifi
+  WiFi.softAP(SSID, PASS);
+  // Serial.println("Access point started");
+  // Serial.print("SSID: ");
+  // Serial.println(SSID);
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.softAPIP());
 
-//   // Set up udp port
-//   udp.begin(UDP_PORT);
-//   Serial.print("Listening for UDP broadcasts on port ");
-//   Serial.println(UDP_PORT);
-// }
+  // Set up udp port
+  udp.begin(UDP_PORT);
+  // Serial.print("Listening for UDP broadcasts on port ");
+  // Serial.println(UDP_PORT);
+}
 
 void setupBLE() {
   // Create BLE device
@@ -95,37 +95,38 @@ void setupBLE() {
   pAdvertising->setScanResponse(false);
   pAdvertising->setMinPreferred(0x0); // set value to 0x00 to not advertise this parameter
   BLEDevice::startAdvertising();
-  Serial.println("Waiting a client connection to notify...");
+  // Serial.println("Waiting a client connection to notify...");
 }
 
 void setup() {
-  Serial.begin(115200);
-  while (!Serial);
+  // Serial.begin(115200);
+  // while (!Serial);
   
-  // setupWiFi();
+  setupWiFi();
   setupBLE();
 }
 
 void loop() {
   // get udp packet from peripherals
-  // char buffer[PACKET_SIZE];
-  // int packet_size = udp.parsePacket();
-  // if (packet_size) {
+  char buffer[PACKET_SIZE];
+  int packet_size = udp.parsePacket();
+  if (packet_size) {
 
-  //   udp.read(buffer, PACKET_SIZE);
+    udp.read(buffer, PACKET_SIZE);
 
-  //   Serial.println(buffer);
+    // Serial.println(buffer);
     
-  //   euler_vector_string.writeValue(buffer);
-  // }
+    // euler_vector_string.writeValue(buffer);
+    value = buffer;
+  }
 
   // notify changed value
   if (deviceConnected) {
     pCharacteristic->setValue((uint8_t*)(value.c_str()), PACKET_SIZE);
     pCharacteristic->notify();
-    value[0] = (value[0] + 1) % 126;
-    if (value[0] < 33) value[0] = 33;
-    Serial.println(value.c_str());
+    // value[0] = (value[0] + 1) % 126;
+    // if (value[0] < 33) value[0] = 33;
+    // Serial.println(value.c_str());
     delay(3);
   }
 
