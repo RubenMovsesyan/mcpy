@@ -7,6 +7,10 @@
 // #include <ESP8266WiFi.h>
 
 #define SAMPLE_PERIOD_MS 100
+#define GRACE_ANGLE_DEGREES 15
+#define MAX_VIBRATION 255
+// #define BASE_VIBRATION 150 // determined experimentally
+#define BASE_VIBRATION 120 // determined experimentally
 
 // RGB LED
 #define RED D0
@@ -14,16 +18,10 @@
 #define BLUE TX
 
 // Motors
-#define M1 D5
-#define M2 D6
-#define M3 D7
-#define M4 D8
-#define UP_MOTOR D5
+#define UP_MOTOR D6
 #define DOWN_MOTOR D8
-#define LEFT_MOTOR D6
+#define LEFT_MOTOR D5
 #define RIGHT_MOTOR D7
-
-int count = 0;
 
 // Global Variables
 Adafruit_BNO055 bno;
@@ -31,8 +29,14 @@ imu::Vector<3> euler_vector, correct_vector, error_vector;
 sensors_event_t imu_event;
 char print_str[512];
 
+int count = 0;
+uint8_t vibes[3] = {0, 0 ,0};
+
+uint8_t min(uint8_t a, uint8_t b) { if (a <= b) return a; else return b; };
+uint8_t max(uint8_t a, uint8_t b) { if (a >= b) return a; else return b; };
+
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   // Try to initialize the IMU
   if (!bno.begin()) {
 		Serial.println("\nFailed to find BNO055 chip");
@@ -41,34 +45,25 @@ void setup() {
 		}
 	}
 	Serial.println("\nBNO055 Found!");
-  Serial.println("checkpoint 0");
-  // bno.enterNormalMode();
-  Serial.println("checkpoint 1");
+  bno.enterNormalMode();
 
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  Serial.println("checkpoint 2");
-  digitalWrite(RED, HIGH);
+  // pinMode(BLUE, OUTPUT);
+  digitalWrite(RED, LOW);
   digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
-  Serial.println("checkpoint 3");
+  // digitalWrite(BLUE, LOW);
   
   analogWriteResolution(8);
-  Serial.println("checkpoint 4");
   pinMode(UP_MOTOR, OUTPUT);
   pinMode(DOWN_MOTOR, OUTPUT);
   pinMode(LEFT_MOTOR, OUTPUT);
   pinMode(RIGHT_MOTOR, OUTPUT);
-  Serial.println("checkpoint 5");
 
-  correct_vector = {0, 0, 0};
-  Serial.println("checkpoint 6");
+  correct_vector = {180, 0, 0};
 }
 
 void loop() {
-  Serial.println("In loop!");
-
   euler_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   // sprintf(
   //   print_str,
@@ -80,28 +75,31 @@ void loop() {
   // Serial.println(print_str);
 
   error_vector = euler_vector - correct_vector;
+  // error_vector[0] = error_vector[0] - 180.0; // get within a range of -180 to +180
   sprintf(
     print_str,
-    "Euler Vector <%f, %f, %f>",
+    "Error Vector <%f, %f, %f>",
     error_vector[0],
     error_vector[1],
     error_vector[2]
   );
-  Serial.println(print_str);
+  // Serial.println(print_str);
 
-  if (error_vector[0] >= 180) {
-    analogWrite(RIGHT_MOTOR, error_vector[0]);
+  // Calculate vibration strength.
+  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
+
+  if (error_vector[0] >= GRACE_ANGLE_DEGREES) {
+    Serial.println("Right");
+    analogWrite(RIGHT_MOTOR, vibes[0]);
     analogWrite(LEFT_MOTOR, 0);
-  } else {
+  } else if (error_vector[0] <= -GRACE_ANGLE_DEGREES) {
+    Serial.println("Left");
     analogWrite(RIGHT_MOTOR, 0);
-    analogWrite(LEFT_MOTOR, fabs(error_vector[0]));
-  }
-
-  if (error_vector[2] >= 180) {
-    analogWrite(UP_MOTOR, error_vector[1]);
-    analogWrite(DOWN_MOTOR, 0);
+    analogWrite(LEFT_MOTOR, vibes[0]);
   } else {
-    analogWrite(UP_MOTOR, 0);
-    analogWrite(DOWN_MOTOR, fabs(error_vector[1]));
+    Serial.println("Grace");
+    analogWrite(RIGHT_MOTOR, 0);
+    analogWrite(LEFT_MOTOR, 0);
   }
+  delay(SAMPLE_PERIOD_MS);
 }
