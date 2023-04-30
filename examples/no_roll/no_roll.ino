@@ -9,14 +9,13 @@
 // <0 to 360, ? to ?, -90 to 90>
 
 // Debug print defines. Only enable one for best results.
-#define DEBUG_PRINT_STATUS 0
-#define DEBUG_PRINT_EULER 1
+#define DEBUG_PRINT_STATUS 1
+#define DEBUG_PRINT_EULER 0
 
 #define SAMPLE_PERIOD_MS 100
 #define YAW_GRACE_ANGLE_DEGREES 15
 #define PITCH_GRACE_ANGLE_DEGREES 15
 #define MAX_VIBRATION 255
-// #define BASE_VIBRATION 150 // determined experimentally
 #define BASE_VIBRATION 120 // determined experimentally
 
 // RGB LED
@@ -51,7 +50,7 @@ uint8_t max(uint8_t a, uint8_t b) { if (a >= b) return a; else return b; };
 void setup() {
   Serial.begin(9600);
   // Try to initialize the IMU
-  if (!bno.begin()) {
+  if (!bno.begin(OPERATION_MODE_NDOF)) {
 		Serial.println("\nFailed to find BNO055 chip");
 		while (1) {
 		  delay(10);
@@ -73,7 +72,7 @@ void setup() {
   pinMode(LEFT_MOTOR, OUTPUT);
   pinMode(RIGHT_MOTOR, OUTPUT);
 
-  correct_vector = {180, 0, 0};
+  correct_vector = {0, 0, 0};
 }
 
 void loop() {
@@ -104,20 +103,22 @@ void loop() {
   vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - YAW_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
   vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - PITCH_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
 
-  if (error_vector[0] >= YAW_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Right, ");
-    analogWrite(RIGHT_MOTOR, vibes[0]);
-    analogWrite(LEFT_MOTOR, 0);
-  } else if (error_vector[0] <= -YAW_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Left, ");
-    analogWrite(RIGHT_MOTOR, 0);
-    analogWrite(LEFT_MOTOR, vibes[0]);
-  } else {
+  // Yaw has a range of 0 to 360.
+  if (error_vector[0] <= YAW_GRACE_ANGLE_DEGREES || error_vector[0] >= 360 - YAW_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Grace, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, 0);
+  } else if (error_vector[0] >= 180) {
+    if (DEBUG_PRINT_STATUS) Serial.print("Left, ");
+    analogWrite(RIGHT_MOTOR, 0);
+    analogWrite(LEFT_MOTOR, vibes[0]);    
+  } else if (error_vector[0] > YAW_GRACE_ANGLE_DEGREES) {
+    if (DEBUG_PRINT_STATUS) Serial.print("Right, ");
+    analogWrite(RIGHT_MOTOR, vibes[0]);
+    analogWrite(LEFT_MOTOR, 0);
   }
 
+  // Pitch has a range of -90 to +90.
   if (error_vector[2] >= PITCH_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
