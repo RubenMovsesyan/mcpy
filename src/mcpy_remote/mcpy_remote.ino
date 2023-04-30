@@ -107,6 +107,10 @@ void initBLE() {
   Serial.println("Mcpy BLE setup complete (remote device)\n");
 
   BLE.advertise();
+
+  // std::string address = BLE.address();
+  Serial.print("Server address: ");
+  Serial.println(BLE.address().c_str());
 }
 
 // updates the vectors and computes the error and vibrations
@@ -180,19 +184,19 @@ void updateHardware() {
 // updateHardware from inside updateBLE
 // oh well ¯\_(ツ)_/¯
 void updateBLE() {
-  BLEDevice peripheral = BLE.central();
+  BLEDevice central = BLE.central();
 
-  if (peripheral) {
-    Serial.print("Connected to peripheral MAC: ");
-    Serial.println(peripheral.address());
+  if (central) {
+    Serial.print("Connected to central MAC: ");
+    Serial.println(central.address());
 
-    while (peripheral.connected()) {
+    while (central.connected()) {
       updateHardware();
       accelCharacteristic.setValue(print_str);
     }
 
     Serial.println("Disconnected from central MAC: ");
-    Serial.println(peripheral.address());
+    Serial.println(central.address());
   }
 }
 
