@@ -13,10 +13,10 @@
 // #define MAX_PERIPHERALS 2
 #define CHAR_SIZE 128
 
-char* print_str;
+char print_str[CHAR_SIZE];
 
-BLEService updateService(SERVICE_UUID);
-BLEStringCharacteristic updateCharacteristic(CHARACTERISTIC_UUID, BLERead | BLENotify, CHAR_SIZE);
+// BLEService updateService(SERVICE_UUID);
+// BLEStringCharacteristic updateCharacteristic(CHARACTERISTIC_UUID, BLERead | BLENotify, CHAR_SIZE);
 BLEDevice peripheral;
 BLECharacteristic ble_char;
 
@@ -82,7 +82,7 @@ void controlPeripheral(BLEDevice peripheral) {
     return;
   }
 
-  BLECharacteristic characteristic = peripheral.characteristic(ACCLE_CHAR_UUID);
+  BLECharacteristic characteristic = peripheral.characteristic(ACCEL_CHAR_UUID);
 
   if (!characteristic) {
     Serial.println("* Peripheral device does not have string_type characteristic!");
@@ -94,8 +94,9 @@ void controlPeripheral(BLEDevice peripheral) {
     return;
   }
 
-  while (periheral.connected()) {
-    
+  while (peripheral.connected()) {
+    characteristic.readValue(print_str, CHAR_SIZE);
+    Serial.println(print_str);
   }
 }
 
