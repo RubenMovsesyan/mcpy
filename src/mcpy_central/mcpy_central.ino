@@ -15,10 +15,13 @@
 
 char print_str[CHAR_SIZE];
 
-// BLEService updateService(SERVICE_UUID);
-// BLEStringCharacteristic updateCharacteristic(CHARACTERISTIC_UUID, BLERead | BLENotify, CHAR_SIZE);
+BLEService exerciseService(SERVICE_UUID);
+BLEStringCharacteristic progressCharacteristic(CHARACTERISTIC_UUID, BLERead | BLENotify, CHAR_SIZE);
+
 BLEDevice peripheral;
 BLECharacteristic ble_char;
+
+BLEDevice central;
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -28,9 +31,26 @@ void initBLE() {
   }
 
   BLE.setLocalName("Mcpy (central device)");
-  // BLE.advertise();
+  BLE.setAdvertisedService(exerciseService);
+  exerciseService.addCharacteristic(progressCharacteristic);
+  BLE.addService(exerciseService);
+  progressCharacteristic.setValue("<(O_O)>");
 
   Serial.println("Mcpy central device started");
+
+  BLE.advertise();
+
+  Serial.print("Server address: ");
+  Serial.println(BLE.address().c_str());
+}
+
+void connectToCentral() {
+  central = BLE.central();
+
+  if (central) {
+    Serial.print("Connected to central MAC: ");
+    Serial.println(central.address());
+  }
 }
 
 void connectToPeripheral() {
@@ -95,8 +115,14 @@ void controlPeripheral(BLEDevice peripheral) {
   }
 
   while (peripheral.connected()) {
+    central = BLE.central();
     characteristic.readValue(print_str, CHAR_SIZE);
-    Serial.println(print_str);
+    Serial.print(print_str);
+    if (central.connected()) {
+      Serial.print(" HEHEHE");
+      progressCharacteristic.setValue(print_str);
+    }
+    Serial.println();
   }
 }
 
@@ -107,6 +133,7 @@ void setup() {
   while (!Serial);
 
   initBLE();
+  connectToCentral();
 }
 
 void loop() {
