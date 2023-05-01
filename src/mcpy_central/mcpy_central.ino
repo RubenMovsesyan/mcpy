@@ -61,8 +61,6 @@ void connectToPeripheral() {
   do {
     BLE.scanForUuid(ACCEL_UUID);
     peripheral = BLE.available();
-    Serial.print(".");
-    delay(100);
   } while (!peripheral);
 
   if (peripheral) {
