@@ -7,10 +7,12 @@
 #define CORRECT_YAW_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
 
 BLEService exerciseService(EXERCISE_SERVICE_UUID);
-// BLEFloatCharacteristic correct_yaw_characteristic(CORRECT_YAW_CHARACTERISTIC_UUID, BLERead);
-BLEDevice central, peripheral;
 
-char print_str [64];
+// convention: name this device "device", this device's central "central" and this device's
+// peripherals "peripheral_{i}"
+BLEDevice peripheral;
+
+char printString [64];
 byte buf[4] = {0};
 
 void setup() {
@@ -21,7 +23,6 @@ void setup() {
     while(1);
   }
   Serial.println("Bluetooth® Low Energy module initialized.");
-  
   BLE.setLocalName("MoCopy Central");
 
   do {
@@ -69,13 +70,13 @@ void loop() {
     return;
   }
 
-  BLECharacteristic correct_yaw_characteristic = peripheral.characteristic(CORRECT_YAW_CHARACTERISTIC_UUID);
+  BLECharacteristic correctYawCharacteristic = peripheral.characteristic(CORRECT_YAW_CHARACTERISTIC_UUID);
 
-  if (!correct_yaw_characteristic) {
+  if (!correctYawCharacteristic) {
     Serial.println("Peripheral device does not have the expected characteristic.");
     peripheral.disconnect();
     return;
-  } else if (!correct_yaw_characteristic.canSubscribe()) {
+  } else if (!correctYawCharacteristic.canSubscribe()) {
     Serial.println("Cannot subscribe to the peripheral device's characteristic.");
     peripheral.disconnect();
     return;
@@ -86,9 +87,9 @@ void loop() {
   while (peripheral.connected()) {
     val = (float)random();
     memcpy(buf, &val, 4);
-    correct_yaw_characteristic.readValue(buf, 4);
-    sprintf(print_str, "%f", val);
-    Serial.println(print_str);
+    correctYawCharacteristic.readValue(buf, 4);
+    sprintf(printString, "%f", val);
+    Serial.println(printString);
   }
   // If the device disconnects, it will reattempt this entire connection process.
 }
