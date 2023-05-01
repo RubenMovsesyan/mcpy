@@ -28,7 +28,6 @@ void setup() {
 
   // Setup peripheral advertising.
   BLE.setLocalName("MoCopy Peripheral");
-  BLE.setAdvertisingInterval(160); // 160 * 0.625ms = 100ms
   BLE.setAdvertisedService(exerciseService);
   BLE.advertise();
   Serial.print("Advertising with address: ");
