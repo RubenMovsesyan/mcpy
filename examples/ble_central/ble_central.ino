@@ -7,10 +7,11 @@
 #define CORRECT_YAW_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
 
 BLEService exerciseService(EXERCISE_SERVICE_UUID);
-BLEFloatCharacteristic correct_yaw_characteristic(CORRECT_YAW_CHARACTERISTIC_UUID, BLE_READ);
+// BLEFloatCharacteristic correct_yaw_characteristic(CORRECT_YAW_CHARACTERISTIC_UUID, BLERead);
 BLEDevice central, peripheral;
 
 char print_str [64];
+byte buf[4] = {0};
 
 void setup() {
   Serial.begin(9600);
@@ -68,13 +69,13 @@ void loop() {
     return;
   }
 
-  correct_yaw_characteristic = peripheral.characteristic(ACCEL_CHAR_UUID);
+  BLECharacteristic correct_yaw_characteristic = peripheral.characteristic(CORRECT_YAW_CHARACTERISTIC_UUID);
 
   if (!correct_yaw_characteristic) {
     Serial.println("Peripheral device does not have the expected characteristic.");
     peripheral.disconnect();
     return;
-  } else if (!characteristic.canSubscribe()) {
+  } else if (!correct_yaw_characteristic.canSubscribe()) {
     Serial.println("Cannot subscribe to the peripheral device's characteristic.");
     peripheral.disconnect();
     return;
@@ -84,8 +85,8 @@ void loop() {
 
   while (peripheral.connected()) {
     val = (float)random();
-
-    correct_yaw_characteristic.readValue(val);
+    memcpy(buf, &val, 4);
+    correct_yaw_characteristic.readValue(buf, 4);
     sprintf(print_str, "%f", val);
     Serial.println(print_str);
   }
