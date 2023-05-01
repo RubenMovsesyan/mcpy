@@ -85,9 +85,8 @@ void loop() {
   float val;
 
   while (peripheral.connected()) {
-    val = (float)random();
-    memcpy(buf, &val, 4);
     correctYawCharacteristic.readValue(buf, 4);
+    memcpy(&val, buf, 4);
     sprintf(printString, "%f", val);
     Serial.println(printString);
   }
