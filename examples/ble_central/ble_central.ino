@@ -7,9 +7,6 @@
 #define CORRECT_YAW_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
 
 BLEService exerciseService(EXERCISE_SERVICE_UUID);
-
-// convention: name this device "device", this device's central "central" and this device's
-// peripherals "peripheral_{i}"
 BLEDevice peripheral;
 
 char printString [64];
@@ -27,9 +24,7 @@ void setup() {
 
   do {
     BLE.scanForUuid(EXERCISE_SERVICE_UUID);
-    peripheral = BLE.available(); // .peripheral(); instead?
-    Serial.print(".");
-    delay(100);
+    peripheral = BLE.available();
   } while (!peripheral);
 
   Serial.println("Peripheral device found.");
@@ -55,10 +50,14 @@ void setup() {
 
 void loop() {
   // Maybe change this to a for loop to make X attempts before quitting.
+  Serial.print("peripheral.connect(): ");
+  Serial.println(peripheral.connect());
+  Serial.print("peripheral.connected(): ");
+  Serial.println(peripheral.connected());
   if (peripheral.connect()) {
     Serial.println("Successfully connected to peripheral.");
   } else {
-    Serial.println("Failed to connect to periphal.");
+    Serial.println("Failed to connect to peripheral.");
     return;
   }
 
