@@ -12,9 +12,12 @@
 
 #include <ArduinoBLE.h>
 
+// Local UUIDs
 #define LOCAL_SERVICE_UUID "c2c727d2-0f5c-4c4b-b2de-27b8dbb64e13"
-#define PERIPHERAL_SERVICE_UUID "a3be2240-409d-4d82-ac18-1146c7d30b44"
 #define LOCAL_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
+
+// Peripheral UUIDs
+#define PERIPHERAL_SERVICE_UUID "a3be2240-409d-4d82-ac18-1146c7d30b44"
 #define PERIPHERAL_CHARACTERISTIC_UUID "3cefd1a0-69e7-4bc2-a89d-092dbb32d339"
 
 BLEService localService(LOCAL_SERVICE_UUID);
@@ -72,8 +75,18 @@ void setup() {
   BLE.stopScan();
 }
 
+void chainPeripheral(BLECharacteristic characteristic) {
+  float info;
+
+  if (peripheral.connected()) {
+    characteristic.readValue(buf, 4);
+    memcpy(&info, buf, 4);
+    localCharacteristic.setValue(info);
+  }
+}
+
 void updateBLE() {
-  BLEDevice central = BLE.central();
+  central = BLE.central();
 
   if (central) {
     Serial.print("Connected to central MAC: ");
@@ -95,8 +108,7 @@ void updateBLE() {
       return;
     }
 
-    BLECharacteristic peripheralCharacteristic =
-      peripheral.characteristic(PERIPHERAL_CHARACTERISTIC_UUID);
+    BLECharacteristic peripheralCharacteristic = peripheral.characteristic(PERIPHERAL_CHARACTERISTIC_UUID);
 
     if (!peripheralCharacteristic) {
       Serial.println("Peripheral device does not have the expected characteristic.");
@@ -110,7 +122,8 @@ void updateBLE() {
 
     while (central.connected()) {
       // Call some function here.
-      localCharacteristic.setValue((float)random());
+      chainPeripheral(peripheralCharacteristic);
+      // localCharacteristic.setValue((float)random());
     }
 
     Serial.println("Disconnected from central MAC: ");

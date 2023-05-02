@@ -3,10 +3,11 @@
 
 #include <ArduinoBLE.h>
 
-#define EXERCISE_SERVICE_UUID "a3be2240-409d-4d82-ac18-1146c7d30b44"
-#define CORRECT_YAW_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
+// These are the hybrids local UUIDs
+#define PERIPHERAL_SERVICE_UUID "c2c727d2-0f5c-4c4b-b2de-27b8dbb64e13"
+#define PERIPHERAL_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
 
-BLEService exerciseService(EXERCISE_SERVICE_UUID);
+BLEService exerciseService(PERIPHERAL_SERVICE_UUID);
 BLEDevice peripheral;
 
 char printString [64];
@@ -23,7 +24,7 @@ void setup() {
   BLE.setLocalName("MoCopy Central");
 
   do {
-    BLE.scanForUuid(EXERCISE_SERVICE_UUID);
+    BLE.scanForUuid(PERIPHERAL_SERVICE_UUID);
     peripheral = BLE.available();
   } while (!peripheral);
 
@@ -65,7 +66,7 @@ void loop() {
     return;
   }
 
-  BLECharacteristic correctYawCharacteristic = peripheral.characteristic(CORRECT_YAW_CHARACTERISTIC_UUID);
+  BLECharacteristic correctYawCharacteristic = peripheral.characteristic(PERIPHERAL_CHARACTERISTIC_UUID);
 
   if (!correctYawCharacteristic) {
     Serial.println("Peripheral device does not have the expected characteristic.");
