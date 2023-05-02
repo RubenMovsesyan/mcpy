@@ -50,10 +50,6 @@ void setup() {
 
 void loop() {
   // Maybe change this to a for loop to make X attempts before quitting.
-  Serial.print("peripheral.connect(): ");
-  Serial.println(peripheral.connect());
-  Serial.print("peripheral.connected(): ");
-  Serial.println(peripheral.connected());
   if (peripheral.connect()) {
     Serial.println("Successfully connected to peripheral.");
   } else {

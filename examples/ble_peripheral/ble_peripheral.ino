@@ -10,6 +10,8 @@
 BLEService exerciseService(EXERCISE_SERVICE_UUID);
 BLEFloatCharacteristic correctYawCharacteristic(CORRECT_YAW_CHARACTERISTIC_UUID, BLERead | BLENotify);
 
+BLEDevice central;
+
 char printString [64];
 byte buf[4] = {0};
 
@@ -35,7 +37,7 @@ void setup() {
 }
 
 void updateBLE() {
-  BLEDevice central = BLE.central();
+  central = BLE.central();
   // Note: The peripheral does not attempt a connection to the central and thus
   // does not call the connect() method.
 
