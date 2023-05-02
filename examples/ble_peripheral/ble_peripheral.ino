@@ -4,11 +4,12 @@
 
 #include <ArduinoBLE.h>
 
-#define EXERCISE_SERVICE_UUID "a3be2240-409d-4d82-ac18-1146c7d30b44"
-#define CORRECT_YAW_CHARACTERISTIC_UUID "41e0f662-7303-4ae6-94be-3b5d3391caad"
+// REMEMBER! Local to peripheral is peripheral to central! ;)
+#define LOCAL_SERVICE_UUID "a3be2240-409d-4d82-ac18-1146c7d30b44"
+#define LOCAL_CHARACTERISTIC_UUID "3cefd1a0-69e7-4bc2-a89d-092dbb32d339"
 
-BLEService exerciseService(EXERCISE_SERVICE_UUID);
-BLEFloatCharacteristic correctYawCharacteristic(CORRECT_YAW_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLEService localService(LOCAL_SERVICE_UUID);
+BLEFloatCharacteristic localCharacteristic(LOCAL_CHARACTERISTIC_UUID, BLERead | BLENotify);
 
 BLEDevice central;
 
@@ -25,12 +26,12 @@ void setup() {
   Serial.println("Bluetooth® Low Energy module initialized.");
 
   // Construct the service to be advertised.
-  exerciseService.addCharacteristic(correctYawCharacteristic);
-  BLE.addService(exerciseService);
+  localService.addCharacteristic(localCharacteristic);
+  BLE.addService(localService);
 
   // Setup peripheral advertising.
   BLE.setLocalName("MoCopy Peripheral");
-  BLE.setAdvertisedService(exerciseService);
+  BLE.setAdvertisedService(localService);
   BLE.advertise();
   Serial.print("Advertising with address: ");
   Serial.println(BLE.address().c_str());
@@ -47,7 +48,7 @@ void updateBLE() {
 
     while (central.connected()) {
       // Call some function here.
-      correctYawCharacteristic.setValue((float)random());
+      localCharacteristic.setValue((float)random());
     }
 
     Serial.println("Disconnected from central MAC: ");

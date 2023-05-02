@@ -73,7 +73,7 @@ void setup() {
 }
 
 void updateBLE() {
-  BLEDevice central = BLE.central();
+  central = BLE.central();
 
   if (central) {
     Serial.print("Connected to central MAC: ");
