@@ -82,15 +82,16 @@ void chainPeripheral(BLECharacteristic characteristic) {
     characteristic.readValue(buf, 4);
     memcpy(&info, buf, 4);
     localCharacteristic.setValue(info);
-  } else {
-    Serial.println("Peripheral Disconnected");
-    if (peripheral.connect()) {
-      Serial.println("Successfully connected to peripheral.");
-    } else {
-      Serial.println("Failed to connect to peripheral.");
-      return;
-    }
-  }
+  } 
+  // else {
+  //   Serial.println("Peripheral Disconnected");
+  //   if (peripheral.connect()) {
+  //     Serial.println("Successfully connected to peripheral.");
+  //   } else {
+  //     Serial.println("Failed to connect to peripheral.");
+  //     return;
+  //   }
+  // }
 }
 
 void updateBLE() {
@@ -101,11 +102,13 @@ void updateBLE() {
     Serial.println(central.address());
 
     // Maybe change this to a for loop to make X attempts before quitting.
-    if (peripheral.connect()) {
-      Serial.println("Successfully connected to peripheral.");
-    } else {
-      Serial.println("Failed to connect to peripheral.");
-      return;
+    if (!peripheral.connected()) {
+      if (peripheral.connect()) {
+        Serial.println("Successfully connected to peripheral.");
+      } else {
+        Serial.println("Failed to connect to peripheral.");
+        return;
+      }
     }
 
     if (peripheral.discoverAttributes()) {
@@ -128,14 +131,21 @@ void updateBLE() {
       return;
     }
 
-    while (central.connected()) {
+    while (central.connected() && peripheral.connected()) {
       // Call some function here.
       chainPeripheral(peripheralCharacteristic);
       // localCharacteristic.setValue((float)random());
     }
 
-    Serial.println("Disconnected from central MAC: ");
-    Serial.println(central.address());
+    if (!central.connected()) {
+      Serial.print("Disconnected from central MAC: ");
+      Serial.println(central.address());
+    }
+
+    if (!peripheral.connected()) {
+      Serial.print("Disconnected from peripheral MAC: ");
+      Serial.println(peripheral.address());
+    }
   }
 }
 
