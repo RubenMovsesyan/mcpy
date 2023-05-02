@@ -82,6 +82,14 @@ void chainPeripheral(BLECharacteristic characteristic) {
     characteristic.readValue(buf, 4);
     memcpy(&info, buf, 4);
     localCharacteristic.setValue(info);
+  } else {
+    Serial.println("Peripheral Disconnected");
+    if (peripheral.connect()) {
+      Serial.println("Successfully connected to peripheral.");
+    } else {
+      Serial.println("Failed to connect to peripheral.");
+      return;
+    }
   }
 }
 
