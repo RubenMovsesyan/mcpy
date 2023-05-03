@@ -42,7 +42,7 @@ sensors_event_t imu_event;
 char print_str[512];
 
 int count = 0;
-uint8_t vibes[3] = {0, 0 ,0};
+uint8_t vibes[3] = {0, 0, 0};
 
 uint8_t min(uint8_t a, uint8_t b) { if (a <= b) return a; else return b; };
 uint8_t max(uint8_t a, uint8_t b) { if (a >= b) return a; else return b; };
