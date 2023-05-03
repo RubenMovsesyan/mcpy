@@ -79,7 +79,6 @@ void loop() {
   }
 
   float val;
-
   while (peripheral.connected()) {
     correctYawCharacteristic.readValue(buf, 4);
     memcpy(&val, buf, 4);

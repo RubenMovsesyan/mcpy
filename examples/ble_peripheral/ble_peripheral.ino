@@ -16,6 +16,8 @@ BLEDevice central;
 char printString [64];
 byte buf[4] = {0};
 
+float val = 0.0;
+
 void setup() {
   Serial.begin(9600);
 
@@ -48,7 +50,8 @@ void updateBLE() {
 
     while (central.connected()) {
       // Call some function here.
-      localCharacteristic.setValue((float)random());
+      val += 1.0;
+      localCharacteristic.setValue(val);
     }
 
     Serial.println("Disconnected from central MAC: ");
