@@ -21,6 +21,7 @@ BLEDevice central;
 
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector;
+float joint_pitch, external_pitch;
 
 char printString [64];
 byte buf[4] = {0};
@@ -66,10 +67,11 @@ void updateBLE() {
 
     while (central.connected()) {
       jointOrientation.readValue(buf, 4);
-      memcpy(&(joint_euler_vector[2]), buf, 4);
+      memcpy(&joint_pitch, buf, 4);
 
       external_euler_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-      externalOrientation.setValue(external_euler_vector[2]);
+      external_pitch = external_euler_vector[2];
+      externalOrientation.setValue(external_pitch);
     }
 
     Serial.println("Disconnected from central MAC: ");
