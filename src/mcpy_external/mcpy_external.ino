@@ -40,9 +40,9 @@
 // ------ Math defines --------
 
 BLEService externalService(EXTERNAL_SERVICE_UUID);
-BLEFloatCharacteristic jointOrientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite);
-BLEFloatCharacteristic externalOrientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify);
-BLEDevice central;
+BLEFloatCharacteristic joint_orientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite);
+BLEFloatCharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLEDevice joint;
 
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector;
@@ -53,18 +53,38 @@ byte buf[4] = {0};
 
 uint8_t vibes[3] = {0, 0, 0};
 
-void setup() {
-  Serial.begin(9600);
-  delay(1000); // wait for Serial
-
-  // Try to initialize the IMU
+// initialize the BNO055 and all the pins
+void initHardware() {
+  // start the bno
   if (!bno.begin(OPERATION_MODE_NDOF)) {
-		Serial.println("\nFailed to find BNO055 chip");
-		while (1);
-	}
-	Serial.println("\nBNO055 Found!");
+    Serial.println("\nFailed to find BNO055 chip");
+    while (1);
+  }
+
+  Serial.println("\nBNO055 Found!");
   bno.enterNormalMode();
 
+  // init rgb pins
+  pinMode(RED,          OUTPUT);
+  pinMode(GREEN,        OUTPUT);
+  pinMode(BLUE,         OUTPUT);
+  digitalWrite(RED,     LOW);
+  digitalWrite(GREEN,   LOW);
+  digitalWrite(BLUE,    LOW);
+
+  // init motor pins
+  analogWriteResolution(8);
+  pinMode(UP_MOTOR,     OUTPUT);
+  pinMode(DOWN_MOTOR,   OUTPUT);
+  pinMode(LEFT_MOTOR,   OUTPUT);
+  pinMode(RIGHT_MOTOR,  OUTPUT);
+
+  Serial.println("Mcpy hardware initialized");
+
+  correct_vector = {0, 0, 0};
+}
+
+void initBLE() {
   if (!BLE.begin()) {
     Serial.println("Starting Bluetooth® Low Energy module failed!");
     while(1);
@@ -72,8 +92,8 @@ void setup() {
   Serial.println("Bluetooth® Low Energy module initialized.");
 
   // Construct the service to be advertised.
-  externalService.addCharacteristic(jointOrientation);
-  externalService.addCharacteristic(externalOrientation);
+  externalService.addCharacteristic(joint_orientation);
+  externalService.addCharacteristic(external_orientation);
   BLE.addService(externalService);
 
   // Setup peripheral advertising.
@@ -82,6 +102,16 @@ void setup() {
   BLE.advertise();
   Serial.print("Advertising with address: ");
   Serial.println(BLE.address().c_str());
+}
+
+void setup() {
+  Serial.begin(9600);
+  delay(1000); // wait for Serial
+
+  Serial.println("Starting Mcpy External...");
+
+  initHardware();
+  initBLE();
 }
 
 void updateHardware() {
@@ -146,23 +176,23 @@ void updateHardware() {
 }
 
 void updateBLE() {
-  central = BLE.central();
-  // Note: The peripheral does not attempt a connection to the central and thus
+  joint = BLE.central();
+  // Note: The peripheral does not attempt a connection to the joint and thus
   // does not call the connect() method.
 
-  if (central) {
-    Serial.print("Connected to central MAC: ");
-    Serial.println(central.address());
+  if (joint) {
+    Serial.print("Connected to joint MAC: ");
+    Serial.println(joint.address());
 
-    while (central.connected()) {
+    while (joint.connected()) {
       updateHardware();
-      jointOrientation.readValue(buf, 4);
+      joint_orientation.readValue(buf, 4);
       memcpy(&joint_pitch, buf, 4);
-      externalOrientation.setValue(external_pitch);
+      external_orientation.setValue(external_pitch);
     }
 
-    Serial.println("Disconnected from central MAC: ");
-    Serial.println(central.address());
+    Serial.println("Disconnected from joint MAC: ");
+    Serial.println(joint.address());
   }
 }
 

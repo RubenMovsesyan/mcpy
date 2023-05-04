@@ -179,6 +179,7 @@ void initBLE() {
 void setup() {
   Serial.begin(9600);
   delay(1000); // wait for Serial
+  Serial.println("Starting Mcpy joint...");
 
   initHardware();
   initBLE();
