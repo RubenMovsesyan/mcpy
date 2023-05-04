@@ -3,15 +3,25 @@
 
 #include <ArduinoBLE.h>
 
+// --------------------------- BLE defines -------------------------
+
+// Local UUIDs
+#define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
+#define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
+
+// UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
+
+// --------------------------- BLE defines -------------------------
 
 #define STR_SIZE 64
 
 char print_string[STR_SIZE];
 
-BLEService joint_service(JOINT_SERVICE_UUID);
-BLEDevice joint;
+BLEDevice joint, app;
+BLEService central_service(CENTRAL_SERVICE_UUID);
+BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID);
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -24,8 +34,44 @@ void initBLE() {
   }
   Serial.println("Successfully initialized Bluetooth® Low Energy module.");
 
-  BLE.setLocalName("MoCopy (central device)");
-  Serial.println("Mcpy central device started");
+  // Construct the service to be advertised
+  central_service.addCharacteristic(forward_characteristic);
+  BLE.addService(central_service);
+
+  // Setup central advertising
+  BLE.setLocalName("MoCopy (central)");
+  BLE.setAdvertisedService(central_service);
+  BLE.advertise();
+
+  Serial.print("Advertising with address: ");
+  Serial.println(BLE.address().c_str());
+
+  // Scan for joint service
+  Serial.println("Scanning for Joint service");
+  do {
+    BLE.scanForUuid(JOINT_SERVICE_UUID);
+    joint = BLE.available();
+  } while (!joint);
+
+  Serial.println("Joint device found.");
+  Serial.print("Device MAC address: ");
+  Serial.println(joint.address());
+  Serial.print("Device Name: ");
+  Serial.println(joint.localName());
+
+  // Print all service advertised by the joint
+  if (joint.hasAdvertisedServiceUuid()) {
+    Serial.println("Joint's advertised services UUIDs: ");
+    for (int i = 0; i < joint.advertisedServiceUuidCount(); i++) {
+      Serial.print(joint.advertisedServiceUuid(i));
+      Serial.print(", ");
+    }
+    Serial.println();
+  } else {
+    Serial.println("Joint has no advertised services!");
+  }
+
+  BLE.stopScan();
 }
 
 void connectToJoint() {
@@ -91,6 +137,10 @@ void controlJoint() {
   Serial.println(diff);
 }
 
+void updateBLE() {
+  
+}
+
 // Arduino Functions \/ ------------------------------------------ \/
  
 void setup() {
@@ -98,7 +148,7 @@ void setup() {
   while (!Serial);
 
   initBLE();
-  connectToJoint();
+  // connectToJoint();
 }
 
 void loop() {
