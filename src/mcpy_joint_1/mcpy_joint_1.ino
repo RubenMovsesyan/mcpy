@@ -28,6 +28,8 @@ byte buf[4] = {0};
 void setup() {
   Serial.begin(9600);
 
+  while (!Serial);
+
   if (!bno.begin(OPERATION_MODE_NDOF)) {
 		Serial.println("\nFailed to find BNO055 chip");
 		while (1) {
@@ -56,6 +58,7 @@ void setup() {
   // Serial.println(BLE.address().c_str());
 
   // Scan for peripheral services.
+  Serial.println("Scanning for external service");
   do {
     BLE.scanForUuid(EXTERNAL_SERVICE_UUID);
     peripheral = BLE.available();
