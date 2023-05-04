@@ -136,17 +136,17 @@ void initBLE() {
   }
   Serial.println("Bluetooth® Low Energy module initialized.");
 
-  // // Construct the service to be advertised.
-  // localService.addCharacteristic(localCharacteristic);
-  // BLE.addService(localService);
+  // Construct the service to be advertised.
+  joint_service.addCharacteristic(rep_completion_characteristic);
+  BLE.addService(joint_service);
 
-  // // Setup external advertising.
-  // BLE.setLocalName("MoCopy Central-external");
-  // BLE.setAdvertisedService(localService);
-  // BLE.advertise();
+  // Setup external advertising.
+  BLE.setLocalName("MoCopy (joint)");
+  BLE.setAdvertisedService(joint_service);
+  BLE.advertise();
 
-  // Serial.print("Advertising with address: ");
-  // Serial.println(BLE.address().c_str());
+  Serial.print("Advertising with address: ");
+  Serial.println(BLE.address().c_str());
 
   // Scan for external services.
   Serial.println("Scanning for External service");
@@ -185,11 +185,11 @@ void setup() {
 }
 
 void updateBLE() {
-  // central = BLE.central();
+  central = BLE.central();
 
-  // if (central) {
-  //   Serial.print("Connected to central MAC: ");
-  //   Serial.println(central.address());
+  if (central) {
+    Serial.print("Connected to central MAC: ");
+    Serial.println(central.address());
 
     // Maybe change this to a for loop to make X attempts before quitting.
     if (!external.connected()) {
@@ -213,26 +213,34 @@ void updateBLE() {
       return;
     }
 
-    BLECharacteristic jointOrientation = external.characteristic(JOINT_ORITENTATION_CHARACTERISTIC_UUID);
-    BLECharacteristic externalOrientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
+    BLECharacteristic joint_orientation = external.characteristic(JOINT_ORITENTATION_CHARACTERISTIC_UUID);
+    BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
 
-    if (!jointOrientation || !externalOrientation) {
+    if (!joint_orientation || !external_orientation) {
       Serial.println("External device does not have the expected characteristic(s).");
       external.disconnect();
       return;
-    } else if (!externalOrientation.canSubscribe()) { // jointOrientation is BLEWrite threfore can't subscribe.
+    } else if (!external_orientation.canSubscribe()) { // joint_orientation is BLEWrite threfore can't subscribe.
       Serial.println("Cannot subscribe to the External device's characteristic(s).");
       external.disconnect();
       return;
     }
 
-    while (/*central.connected() && */external.connected()) {
+    while (central.connected() && external.connected()) {
       updateHardware();
       memcpy(buf, &joint_pitch, 4);
-      jointOrientation.setValue(buf, 4);
+      joint_orientation.setValue(buf, 4);
 
-      externalOrientation.readValue(buf, 4);
+      external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
+
+      float diff = fabs(joint_pitch - external_pitch);
+
+      if (diff < 0.2) {
+        rep_completion_characteristic.setValue(1);
+      } else {
+        rep_completion_characteristic.setValue(0);
+      }
 
       if (DEBUG_PRINT_BLE) {
         Serial.print("Joint pitch: ");
@@ -242,16 +250,16 @@ void updateBLE() {
       }
     }
 
-    // if (!central.connected()) {
-    //   Serial.print("Disconnected from central MAC: ");
-    //   Serial.println(central.address());
-    // }
+    if (!central.connected()) {
+      Serial.print("Disconnected from central MAC: ");
+      Serial.println(central.address());
+    }
 
     if (!external.connected()) {
       Serial.print("Disconnected from External MAC: ");
       Serial.println(external.address());
     }
-  // }
+  }
 }
 
 void updateHardware() {
