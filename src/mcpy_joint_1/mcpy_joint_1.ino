@@ -44,13 +44,13 @@
 #define PITCH_GRACE_ANGLE_DEGREES 15
 #define MAX_VIBRATION 255
 #define BASE_VIBRATION 120 // determined experimentally
+#define SAMPLE_PERIOD_MS 10
 
 // ------ Math defines --------
 
 // ------ Other defines -------
 
 #define STR_SIZE 64
-#define SAMPLE_PERIOD_MS 10
 
 // debug defines
 #define DEBUG_PRINT_JOINT 0
@@ -236,8 +236,8 @@ void updateBLE() {
 
       if (DEBUG_PRINT_BLE) {
         Serial.print("Joint pitch: ");
-        Serial.println(joint_pitch);
-        Serial.print("External pitch: ");
+        Serial.print(joint_pitch);
+        Serial.print(" External pitch: ");
         Serial.println(external_pitch);
       }
     }
