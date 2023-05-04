@@ -98,6 +98,7 @@ void setup() {
   while (!Serial);
 
   initBLE();
+  connectToJoint();
 }
 
 void loop() {
