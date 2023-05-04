@@ -21,7 +21,7 @@ char print_string[STR_SIZE];
 
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
-BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID);
+BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -74,7 +74,7 @@ void initBLE() {
   BLE.stopScan();
 }
 
-void connectToJoint() {
+void scanForJoint() {
   Serial.println("Discovering joint device...");
 
   do {
@@ -95,7 +95,7 @@ void connectToJoint() {
   }
 }
 
-void controlJoint() {
+void connectToJoint() {
   Serial.println("- Connecting to joint device...");
 
   if (joint.connect()) {
@@ -117,6 +117,13 @@ void controlJoint() {
     joint.disconnect();
     return;
   }
+}
+
+void updateBLE() {
+  if (!joint.connected()) {
+    Serial.println("Disconnected from joint, retrying...");
+    connectToJoint();
+  }
 
   BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
 
@@ -137,10 +144,6 @@ void controlJoint() {
   Serial.println(diff);
 }
 
-void updateBLE() {
-  
-}
-
 // Arduino Functions \/ ------------------------------------------ \/
  
 void setup() {
@@ -148,9 +151,10 @@ void setup() {
   while (!Serial);
 
   initBLE();
+  scanForJoint();
   // connectToJoint();
 }
 
 void loop() {
-  controlJoint();
+  updateBLE();
 }
