@@ -55,7 +55,7 @@ uint8_t vibes[3] = {0, 0, 0};
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
+  delay(1000); // wait for Serial
 
   // Try to initialize the IMU
   if (!bno.begin(OPERATION_MODE_NDOF)) {

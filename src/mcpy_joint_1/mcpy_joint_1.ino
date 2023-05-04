@@ -178,7 +178,7 @@ void initBLE() {
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
+  delay(1000); // wait for Serial
 
   initHardware();
   initBLE();
