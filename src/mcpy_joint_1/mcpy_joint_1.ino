@@ -178,7 +178,7 @@ void initBLE() {
 
 void setup() {
   Serial.begin(9600);
-  delay(1000); // wait for Serial
+  delay(2000); // wait for Serial
   Serial.println("Starting Mcpy joint...");
 
   initHardware();
@@ -237,7 +237,7 @@ void updateBLE() {
 
       float diff = fabs(joint_pitch - external_pitch);
 
-      if (diff < 0.2) {
+      if (diff < 2) {
         rep_completion_characteristic.setValue(1);
       } else {
         rep_completion_characteristic.setValue(0);

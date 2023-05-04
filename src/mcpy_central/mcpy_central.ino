@@ -184,7 +184,9 @@ void updateBLE() {
 void setup() {
   Serial.begin(9600);
   // while (!Serial); // only use this line if the serial monitor is needed
-  delay(1000);
+  delay(2000);
+  Serial.println("Starting Mcpy central device...");
+
 
   initBLE();
   // scanForJoint();
