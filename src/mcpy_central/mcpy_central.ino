@@ -120,39 +120,74 @@ void connectToJoint() {
 }
 
 void updateBLE() {
-  if (!joint.connected()) {
-    Serial.println("Disconnected from joint, retrying...");
-    connectToJoint();
+  app = BLE.central();
+
+  if (app) {
+    Serial.print("Connected to app MAC: ");
+    Serial.println(app.address());
+
+    if (!joint.connected()) {
+      if (joint.connect()) {
+        Serial.println("Successfully connected to Joint.");
+      } else {
+        Serial.println("Failed to connect to Joint.");
+        Serial.print("Device MAC address: ");
+        Serial.println(joint.address());
+        Serial.print("Device Name: ");
+        Serial.println(joint.localName());
+        return;
+      }
+    }
+
+    if (joint.discoverAttributes()) {
+      Serial.println("Successfully discovered Joint attributes.");
+    } else {
+      Serial.println("Failed to discover Joint attributes.");
+      joint.disconnect();
+      return;
+    }
+
+    BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
+
+    if (!rep_completion_characteristic) {
+      Serial.println("Joint device does not have the expected characteristic(s).");
+      joint.disconnect();
+      return;
+    } else if (!rep_completion_characteristic.canSubscribe()) {
+      Serial.println("Cannot subscribe to the Joint device's characteristic(s).");
+      joint.disconnect();
+      return;
+    }
+
+    float rep_completion = 0;
+
+    while (app.connected() && joint.connected()) {
+      rep_completion_characteristic.readValue(buf, 4);
+      memcpy(&rep_completion, buf, 4);
+      forward_characteristic.setValue(rep_completion);
+    }
+
+    if (!app.connected()) {
+      Serial.print("Disconnected from app MAC: ");
+      Serial.println(app.address());
+    }
+
+    if (joint.connected()) {
+      Serial.print("Disconnected from Joint MAC: ");
+      Serial.println(joint.address());
+    }
   }
-
-  BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
-
-  if (!rep_completion_characteristic) {
-    Serial.println("* joint device does not have the expected characteristic!");
-    joint.disconnect();
-    return;
-  } else if (!rep_completion_characteristic.canSubscribe()) {
-    Serial.println("* Periheral device does not have a subscribable characteristic!");
-    joint.disconnect();
-    return;
-  }
-
-  rep_completion_characteristic.readValue(buf, 4);
-  memcpy(&diff, buf, 4);
-
-  Serial.print("diff: ");
-  Serial.println(diff);
 }
 
 // Arduino Functions \/ ------------------------------------------ \/
  
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
+  // while (!Serial); // only use this line if the serial monitor is needed
+  delay(1000);
 
   initBLE();
-  scanForJoint();
-  // connectToJoint();
+  // scanForJoint();
 }
 
 void loop() {
