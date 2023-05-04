@@ -3,125 +3,92 @@
 
 #include <ArduinoBLE.h>
 
-#define SERVICE_UUID "3b0814b8-e6ab-11ed-a05b-0242ac120003"
-#define CHARACTERISTIC_UUID "333ad260-e6ac-11ed-a05b-0242ac120003"
+#define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
+#define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 
-// This is the uuid for the remote band
-#define ACCEL_UUID "0b03321e-e6ad-11ed-a05b-0242ac120003"
-#define ACCEL_CHAR_UUID "1a01ecfc-e6b1-11ed-a05b-0242ac120003"
+#define STR_SIZE 64
 
-// #define MAX_PERIPHERALS 2
-#define CHAR_SIZE 128
+char print_string[STR_SIZE];
 
-char print_str[CHAR_SIZE];
+BLEService joint_service(JOINT_SERVICE_UUID);
+BLEDevice joint;
 
-BLEService exerciseService(SERVICE_UUID);
-BLEStringCharacteristic progressCharacteristic(CHARACTERISTIC_UUID, BLERead | BLENotify, CHAR_SIZE);
-
-BLEDevice peripheral;
-BLECharacteristic ble_char;
-
-BLEDevice central;
+byte buf[4] = {0};
+float diff = 0.0;
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
   if (!BLE.begin()) {
-    Serial.println("* Starting Bluetooth® Low Energy module failed!");
+    Serial.println("Starting Bluetooth® Low Energy module failed!");
     while (1);
   }
+  Serial.println("Successfully initialized Bluetooth® Low Energy module.");
 
-  BLE.setLocalName("Mcpy (central device)");
-  BLE.setAdvertisedService(exerciseService);
-  exerciseService.addCharacteristic(progressCharacteristic);
-  BLE.addService(exerciseService);
-  progressCharacteristic.setValue("<(O_O)>");
-
+  BLE.setLocalName("MoCopy (central device)");
   Serial.println("Mcpy central device started");
-
-  BLE.advertise();
-
-  Serial.print("Server address: ");
-  Serial.println(BLE.address().c_str());
 }
 
-void connectToCentral() {
-  central = BLE.central();
-
-  if (central) {
-    Serial.print("Connected to central MAC: ");
-    Serial.println(central.address());
-  }
-}
-
-void connectToPeripheral() {
-  BLEDevice peripheral;
-
-  Serial.println("- Discovering peripheral device...");
+void connectToJoint() {
+  Serial.println("Discovering joint device...");
 
   do {
-    BLE.scanForUuid(ACCEL_UUID);
-    peripheral = BLE.available();
-  } while (!peripheral);
+    BLE.scanForUuid(JOINT_SERVICE_UUID);
+    joint = BLE.available();
+  } while (!joint);
 
-  if (peripheral) {
-    Serial.println("* Peripheral device found!");
+  if (joint) {
+    Serial.println("Joint device found!");
     Serial.print("* Device MAC address: ");
-    Serial.println(peripheral.address());
+    Serial.println(joint.address());
     Serial.print("* Device Name: ");
-    Serial.println(peripheral.localName());
+    Serial.println(joint.localName());
     Serial.print("* Advertised service UUID: ");
-    Serial.println(peripheral.advertisedServiceUuid());
+    Serial.println(joint.advertisedServiceUuid());
     Serial.println();
     BLE.stopScan();
-    controlPeripheral(peripheral);
   }
 }
 
-void controlPeripheral(BLEDevice peripheral) {
-  Serial.println("- Connecting to peripheral device...");
+void controlJoint() {
+  Serial.println("- Connecting to joint device...");
 
-  if (peripheral.connect()) {
-    Serial.println("* Connect to peripheral device!");
+  if (joint.connect()) {
+    Serial.println("* Connect to joint device!");
     Serial.println();
   } else {
-    Serial.println("* Concnection to peripheral device failed!");
+    Serial.println("* Connection to joint device failed!");
     Serial.println();
     return;
   }
 
-  Serial.println("- Discovering peripheral device attributes...");
-  if (peripheral.discoverAttributes()) {
-    Serial.println("* Peripheral device attributes discovered!");
+  Serial.println("- Discovering joint device attributes...");
+  if (joint.discoverAttributes()) {
+    Serial.println("* joint device attributes discovered!");
     Serial.println();
   } else {
-    Serial.println("* Peripheral device attributes discovery failed!");
+    Serial.println("* joint device attributes discovery failed!");
     Serial.println();
-    peripheral.disconnect();
+    joint.disconnect();
     return;
   }
 
-  BLECharacteristic characteristic = peripheral.characteristic(ACCEL_CHAR_UUID);
+  BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
 
-  if (!characteristic) {
-    Serial.println("* Peripheral device does not have string_type characteristic!");
-    peripheral.disconnect();
+  if (!rep_completion_characteristic) {
+    Serial.println("* joint device does not have the expected characteristic!");
+    joint.disconnect();
     return;
-  } else if (!characteristic.canSubscribe()) {
-    Serial.println("* Periheral device does not have a subscribable string_type characteristic!");
-    peripheral.disconnect();
+  } else if (!rep_completion_characteristic.canSubscribe()) {
+    Serial.println("* Periheral device does not have a subscribable characteristic!");
+    joint.disconnect();
     return;
   }
 
-  while (peripheral.connected()) {
-    central = BLE.central();
-    characteristic.readValue(print_str, CHAR_SIZE);
-    Serial.print(print_str);
-    if (central.connected()) {
-      Serial.print(" HEHEHE");
-      progressCharacteristic.setValue(print_str);
-    }
-    Serial.println();
-  }
+  rep_completion_characteristic.readValue(buf, 4);
+  memcpy(&diff, buf, 4);
+
+  Serial.print("diff: ");
+  Serial.println(diff);
 }
 
 // Arduino Functions \/ ------------------------------------------ \/
@@ -131,9 +98,8 @@ void setup() {
   while (!Serial);
 
   initBLE();
-  connectToCentral();
 }
 
 void loop() {
-  connectToPeripheral();
+  controlJoint();
 }
