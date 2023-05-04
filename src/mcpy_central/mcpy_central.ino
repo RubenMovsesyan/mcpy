@@ -8,12 +8,24 @@
 // Local UUIDs
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
 #define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
+#define EXERCISE_INFO_CHARACTERISTIC_UUID "f75061a7-e391-4b61-ae4b-95812a2086e3"
 
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 
 // --------------------------- BLE defines -------------------------
+
+
+// ------ State Machine defines ------
+
+#define IDLE                  1
+#define CALIBRATION           2
+#define PRE_EXERCISE          3
+#define EXERCISE              4
+#define RESPONSE              5
+
+// ------ State Machine defines ------
 
 #define STR_SIZE 64
 
@@ -22,9 +34,12 @@ char print_string[STR_SIZE];
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLEFloatCharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite);
 
 byte buf[4] = {0};
 float diff = 0.0;
+
+int state_machine;
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -72,51 +87,6 @@ void initBLE() {
   }
 
   BLE.stopScan();
-}
-
-void scanForJoint() {
-  Serial.println("Discovering joint device...");
-
-  do {
-    BLE.scanForUuid(JOINT_SERVICE_UUID);
-    joint = BLE.available();
-  } while (!joint);
-
-  if (joint) {
-    Serial.println("Joint device found!");
-    Serial.print("* Device MAC address: ");
-    Serial.println(joint.address());
-    Serial.print("* Device Name: ");
-    Serial.println(joint.localName());
-    Serial.print("* Advertised service UUID: ");
-    Serial.println(joint.advertisedServiceUuid());
-    Serial.println();
-    BLE.stopScan();
-  }
-}
-
-void connectToJoint() {
-  Serial.println("- Connecting to joint device...");
-
-  if (joint.connect()) {
-    Serial.println("* Connect to joint device!");
-    Serial.println();
-  } else {
-    Serial.println("* Connection to joint device failed!");
-    Serial.println();
-    return;
-  }
-
-  Serial.println("- Discovering joint device attributes...");
-  if (joint.discoverAttributes()) {
-    Serial.println("* joint device attributes discovered!");
-    Serial.println();
-  } else {
-    Serial.println("* joint device attributes discovery failed!");
-    Serial.println();
-    joint.disconnect();
-    return;
-  }
 }
 
 void updateBLE() {
@@ -187,9 +157,8 @@ void setup() {
   delay(2000);
   Serial.println("Starting Mcpy central device...");
 
-
+  state_machine = IDLE;
   initBLE();
-  // scanForJoint();
 }
 
 void loop() {
