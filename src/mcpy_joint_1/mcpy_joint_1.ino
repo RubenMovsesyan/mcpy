@@ -81,7 +81,7 @@ byte buf[4] = {0};
 BLEDevice central, external;
 BLEService joint_service(JOINT_SERVICE_UUID);
 BLEService external_service(EXTERNAL_SERVICE_UUID);
-BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead);
+BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 
 // Hardware variables
 /*
