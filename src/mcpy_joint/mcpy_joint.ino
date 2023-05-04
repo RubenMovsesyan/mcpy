@@ -178,7 +178,10 @@ void updateHardware() {
 
 void setup() {
   Serial.begin(9600);
+  while (!Serial);
 
+  initHardware();
+  initBLE();
 }
 
 void loop() {
