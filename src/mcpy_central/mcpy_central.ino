@@ -40,9 +40,21 @@ BLEFloatCharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC
 byte buf[4] = {0};
 float diff = 0.0;
 byte exer_info_buf[EXER_INFO_SIZE] = {0};
-int calibration_timer;
+// int calibration_timer;
 
 int state_machine;
+
+// -------- Exercise info variables ---------------
+
+int num_reps;
+int num_keyframes;
+float keyframes[EXER_INFO_SIZE - 2] = {0};
+int curr_keyframe;
+bool calibrated;
+
+// -------- Exercise info variables ---------------
+
+
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -92,37 +104,40 @@ void initBLE() {
   BLE.stopScan();
 }
 
-void updateStateMachine(float rep_completion) {
+void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
   switch(state_machine) {
     case IDLE:
       if (exercise_info_characteristic.written()) {
         exercise_info_characteristic.readValue(exer_info_buf, EXER_INFO_SIZE);
-        // do something with the exercise info
+        // distribute exercise info into variables
+        num_reps = exer_info_buf[0];
+        num_keyframes = exer_info_buf[1];
+        memcpy(&keyframes, exer_info_buf[2], EXER_INFO_SIZE - 2);
+        calibrated = false;
         state_machine = CALIBRATION;
       }
       break;
     case CALIBRATION:
-      while (calibration_timer > 0) {
-        delay(1000);
-        calibration_timer--;
-      }
-      calibration_timer = 5;
+      delay(5000);
+      // "calibrate"
+      calibrated = true;
+      curr_keyframe = 0;
       // send calibrated to app here
       state_machine = PRE_EXERCISE;
       break;
     case PRE_EXERCISE:
       // set the keyframe to 0 here
-      if (/* full exercise is over */) {
+      if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
         state_machine = EXERCISE;
       }
       break;
     case EXERCISE:
-      // rep_completion_characteristic.readValue(buf, 4);
-      // memcpy(&rep_completion, buf, 4);
+      rep_completion_characteristic.readValue(buf, 4);
+      memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
-      if (/* key frame count != max key frames */) {
+      if (curr_keyframe >= num_reps * num_keyframes) {
         if (/* key frame hit */) {
           // key frame count ++
           // set key frame data
@@ -131,6 +146,8 @@ void updateStateMachine(float rep_completion) {
           // set timeout data
           state_machine = RESPONSE;
         }
+      } else {
+        state_machine = PRE_EXERCISE;
       }
       break;
     case RESPONSE:
@@ -209,7 +226,8 @@ void setup() {
   Serial.println("Starting Mcpy central device...");
 
   state_machine = IDLE;
-  calibration_timer = 5;
+  calibrated = false;
+
   initBLE();
 }
 
