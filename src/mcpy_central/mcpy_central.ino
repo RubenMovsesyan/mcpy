@@ -13,6 +13,7 @@
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
+#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 
 // --------------------------- BLE defines -------------------------
 
@@ -29,6 +30,7 @@
 
 #define STR_SIZE              64
 #define EXER_INFO_SIZE        512
+#define PITCH_THRESHOLD       2
 
 char print_string[STR_SIZE];
 
@@ -54,6 +56,10 @@ bool calibrated;
 
 // -------- Exercise info variables ---------------
 
+
+// temp variables
+int light_counter;
+#define LED D7
 
 
 // This initializes the BLE server for the phone to connect to
@@ -134,18 +140,26 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       }
       break;
     case EXERCISE:
-      rep_completion_characteristic.readValue(buf, 4);
-      memcpy(&rep_completion, buf, 4);
+      // rep_completion_characteristic.readValue(buf, 4);
+      // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
+      float pitch_diff = 0;
+      float actual_pitch_diff = keyframes[curr_keyframe + 2];
+      pitch_diff_characteristic.readValue(buf, 4);
+      memcpy(&pitch_diff, buf, 4);
+
       if (curr_keyframe >= num_reps * num_keyframes) {
-        if (/* key frame hit */) {
+        if (fabs(pitch_diff - actual_pitch_diff) <= PITCH_THRESHOLD) {
           // key frame count ++
+          light_counter = 1000;
+          curr_keyframe++;
           // set key frame data
           state_machine = RESPONSE;
-        } else if (/* timeout */) {
-          // set timeout data
-          state_machine = RESPONSE;
-        }
+        } 
+        // else if (/* timeout */) {
+        //   // set timeout data
+        //   state_machine = RESPONSE;
+        // }
       } else {
         state_machine = PRE_EXERCISE;
       }
@@ -156,6 +170,13 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       break;
     default:
       break;
+  }
+}
+
+void tempTurnLightOn() {
+  if (light_counter) {
+    digitalWrite(LED, HIGH);
+    light_counter--;
   }
 }
 
@@ -188,6 +209,7 @@ void updateBLE() {
     }
 
     BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
+    BLECharacteristic pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
 
     if (!rep_completion_characteristic) {
       Serial.println("Joint device does not have the expected characteristic(s).");
@@ -199,10 +221,9 @@ void updateBLE() {
       return;
     }
 
-    float rep_completion = 0;
-
     while (app.connected() && joint.connected()) {
       updateStateMachine(rep_completion);
+      tempTurnLightOn();
     }
 
     if (!app.connected()) {
@@ -227,6 +248,9 @@ void setup() {
 
   state_machine = IDLE;
   calibrated = false;
+
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
 
   initBLE();
 }
