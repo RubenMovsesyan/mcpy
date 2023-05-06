@@ -27,17 +27,20 @@
 
 // ------ State Machine defines ------
 
-#define STR_SIZE 64
+#define STR_SIZE              64
+#define EXER_INFO_SIZE        512
 
 char print_string[STR_SIZE];
 
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
-BLEFloatCharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite);
+BLEFloatCharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify);
 
 byte buf[4] = {0};
 float diff = 0.0;
+byte exer_info_buf[EXER_INFO_SIZE] = {0};
+int calibration_timer;
 
 int state_machine;
 
@@ -89,6 +92,56 @@ void initBLE() {
   BLE.stopScan();
 }
 
+void updateStateMachine(float rep_completion) {
+  switch(state_machine) {
+    case IDLE:
+      if (exercise_info_characteristic.written()) {
+        exercise_info_characteristic.readValue(exer_info_buf, EXER_INFO_SIZE);
+        // do something with the exercise info
+        state_machine = CALIBRATION;
+      }
+      break;
+    case CALIBRATION:
+      while (calibration_timer > 0) {
+        delay(1000);
+        calibration_timer--;
+      }
+      calibration_timer = 5;
+      // send calibrated to app here
+      state_machine = PRE_EXERCISE;
+      break;
+    case PRE_EXERCISE:
+      // set the keyframe to 0 here
+      if (/* full exercise is over */) {
+        state_machine = IDLE;
+      } else {
+        state_machine = EXERCISE;
+      }
+      break;
+    case EXERCISE:
+      // rep_completion_characteristic.readValue(buf, 4);
+      // memcpy(&rep_completion, buf, 4);
+      // forward_characteristic.setValue(rep_completion);
+      if (/* key frame count != max key frames */) {
+        if (/* key frame hit */) {
+          // key frame count ++
+          // set key frame data
+          state_machine = RESPONSE;
+        } else if (/* timeout */) {
+          // set timeout data
+          state_machine = RESPONSE;
+        }
+      }
+      break;
+    case RESPONSE:
+      // send timeout / key frame data
+      state_machine = EXERCISE;
+      break;
+    default:
+      break;
+  }
+}
+
 void updateBLE() {
   app = BLE.central();
 
@@ -132,9 +185,7 @@ void updateBLE() {
     float rep_completion = 0;
 
     while (app.connected() && joint.connected()) {
-      rep_completion_characteristic.readValue(buf, 4);
-      memcpy(&rep_completion, buf, 4);
-      forward_characteristic.setValue(rep_completion);
+      updateStateMachine(rep_completion);
     }
 
     if (!app.connected()) {
@@ -158,6 +209,7 @@ void setup() {
   Serial.println("Starting Mcpy central device...");
 
   state_machine = IDLE;
+  calibration_timer = 5;
   initBLE();
 }
 
