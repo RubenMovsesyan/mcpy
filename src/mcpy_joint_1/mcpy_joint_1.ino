@@ -14,6 +14,7 @@
 
 // Characteristic UUIDs
 // local uuids
+#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 
 // external uuids
@@ -82,6 +83,7 @@ BLEDevice central, external;
 BLEService joint_service(JOINT_SERVICE_UUID);
 BLEService external_service(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
 
 // Hardware variables
 /*
