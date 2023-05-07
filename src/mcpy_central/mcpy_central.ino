@@ -20,11 +20,11 @@
 
 // ------ State Machine defines ------
 
-#define IDLE                  1
-#define CALIBRATION           2
-#define PRE_EXERCISE          3
-#define EXERCISE              4
-#define RESPONSE              5
+#define IDLE                  0
+#define CALIBRATION           1
+#define PRE_EXERCISE          2
+#define EXERCISE              3
+#define RESPONSE              4
 
 // ------ State Machine defines ------
 
@@ -112,34 +112,37 @@ void initBLE() {
 
 void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
   switch(state_machine) {
-    case IDLE:
+    case IDLE: {
       if (exercise_info_characteristic.written()) {
         exercise_info_characteristic.readValue(exer_info_buf, EXER_INFO_SIZE);
         // distribute exercise info into variables
         num_reps = exer_info_buf[0];
         num_keyframes = exer_info_buf[1];
-        memcpy(&keyframes, exer_info_buf[2], EXER_INFO_SIZE - 2);
+        memcpy(exer_info_buf, &keyframes, EXER_INFO_SIZE - 2);
         calibrated = false;
         state_machine = CALIBRATION;
       }
+    }
       break;
-    case CALIBRATION:
+    case CALIBRATION: {
       delay(5000);
       // "calibrate"
       calibrated = true;
       curr_keyframe = 0;
       // send calibrated to app here
       state_machine = PRE_EXERCISE;
+    }
       break;
-    case PRE_EXERCISE:
+    case PRE_EXERCISE: {
       // set the keyframe to 0 here
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
         state_machine = EXERCISE;
       }
+    }
       break;
-    case EXERCISE:
+    case EXERCISE: {
       // rep_completion_characteristic.readValue(buf, 4);
       // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
@@ -163,10 +166,12 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       } else {
         state_machine = PRE_EXERCISE;
       }
+    }
       break;
-    case RESPONSE:
+    case RESPONSE: {
       // send timeout / key frame data
       state_machine = EXERCISE;
+    }
       break;
     default:
       break;
@@ -222,7 +227,7 @@ void updateBLE() {
     }
 
     while (app.connected() && joint.connected()) {
-      updateStateMachine(rep_completion);
+      updateStateMachine(pitch_diff_characteristic);
       tempTurnLightOn();
     }
 
