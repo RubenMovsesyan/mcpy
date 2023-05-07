@@ -140,6 +140,7 @@ void initBLE() {
 
   // Construct the service to be advertised.
   joint_service.addCharacteristic(rep_completion_characteristic);
+  joint_service.addCharacteristic(pitch_diff_characteristic);
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -238,6 +239,8 @@ void updateBLE() {
       memcpy(&external_pitch, buf, 4);
 
       float diff = fabs(joint_pitch - external_pitch);
+
+      pitch_diff_characteristic.setValue(diff);
 
       if (diff < 2) {
         rep_completion_characteristic.setValue(1);

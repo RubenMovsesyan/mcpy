@@ -177,6 +177,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       memcpy(&pitch_diff, buf, 4);
 
       if (curr_keyframe < num_reps * num_keyframes) {
+        Serial.println(fabs(pitch_diff - actual_pitch_diff));
         if (fabs(pitch_diff - actual_pitch_diff) <= PITCH_THRESHOLD) {
           // key frame count ++
           light_counter = 1000;
@@ -188,8 +189,10 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
         //   // set timeout data
         //   state_machine = RESPONSE;
         // }
-      } else {
+      } else if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = PRE_EXERCISE;
+      } else {
+        state_machine = RESPONSE;
       }
     }
       break;
@@ -285,6 +288,12 @@ void setup() {
 
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
+
+  // starting keyframes with dummy data for testing
+  keyframes[0] = 0;
+  keyframes[1] = 20;
+  keyframes[2] = 45;
+  keyframes[3] = 90;
 
   initBLE();
 }
