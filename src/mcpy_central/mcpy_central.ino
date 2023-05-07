@@ -56,6 +56,11 @@ bool calibrated;
 
 // -------- Exercise info variables ---------------
 
+// -------- Debug defines ---------
+
+#define DEBUG_PRINTS 1
+
+// -------- Debug defines ---------
 
 // temp variables
 int light_counter;
@@ -72,6 +77,7 @@ void initBLE() {
 
   // Construct the service to be advertised
   central_service.addCharacteristic(forward_characteristic);
+  central_service.addCharacteristic(exercise_info_characteristic);
   BLE.addService(central_service);
 
   // Setup central advertising
@@ -113,18 +119,35 @@ void initBLE() {
 void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
   switch(state_machine) {
     case IDLE: {
+      if (DEBUG_PRINTS) Serial.println("&& State: IDLE");
+
       if (exercise_info_characteristic.written()) {
         exercise_info_characteristic.readValue(exer_info_buf, EXER_INFO_SIZE);
         // distribute exercise info into variables
         num_reps = exer_info_buf[0];
         num_keyframes = exer_info_buf[1];
-        memcpy(exer_info_buf, &keyframes, EXER_INFO_SIZE - 2);
+        // memcpy(keyframes, exer_info_buf, EXER_INFO_SIZE - 2);
+        // for (int i = 0; i < (EXER_INFO_SIZE - 2) / 4; i += 4) {
+        //   keyframes[i] = exer_info_buf[(i / 4) + 2];
+        // }
         calibrated = false;
         state_machine = CALIBRATION;
       }
     }
       break;
     case CALIBRATION: {
+      if (DEBUG_PRINTS) Serial.println("&& State: CALIBRATION");
+
+      Serial.println(num_reps);
+      Serial.println(num_keyframes);
+
+      for (int i = 0; i < EXER_INFO_SIZE; i++) {
+        Serial.print(exer_info_buf[i]);
+        Serial.print(" | ");
+      }
+
+      Serial.println();
+
       delay(5000);
       // "calibrate"
       calibrated = true;
@@ -134,6 +157,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
     }
       break;
     case PRE_EXERCISE: {
+      if (DEBUG_PRINTS) Serial.println("&& State: PRE_EXERCISE");
       // set the keyframe to 0 here
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
@@ -143,6 +167,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
     }
       break;
     case EXERCISE: {
+      if (DEBUG_PRINTS) Serial.println("&& State: EXERCISE");
       // rep_completion_characteristic.readValue(buf, 4);
       // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
@@ -151,7 +176,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
 
-      if (curr_keyframe >= num_reps * num_keyframes) {
+      if (curr_keyframe < num_reps * num_keyframes) {
         if (fabs(pitch_diff - actual_pitch_diff) <= PITCH_THRESHOLD) {
           // key frame count ++
           light_counter = 1000;
@@ -169,11 +194,15 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
     }
       break;
     case RESPONSE: {
+      if (DEBUG_PRINTS) Serial.println("&& State: RESPONSE");
       // send timeout / key frame data
+      Serial.print("Current keyframe: ");
+      Serial.println(curr_keyframe);
       state_machine = EXERCISE;
     }
       break;
     default:
+      if (DEBUG_PRINTS) Serial.println("&& State: DEFAULT");
       break;
   }
 }
