@@ -37,7 +37,7 @@ char print_string[STR_SIZE];
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
-BLEFloatCharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify);
+BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -51,7 +51,7 @@ int state_machine;
 int num_reps;
 int num_keyframes;
 float keyframes[EXER_INFO_SIZE - 2] = {0};
-int curr_keyframe;
+int curr_keyframe, key_frame_index;
 bool calibrated;
 
 // -------- Exercise info variables ---------------
@@ -152,6 +152,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       // "calibrate"
       calibrated = true;
       curr_keyframe = 0;
+      key_frame_index = 0;
       // send calibrated to app here
       state_machine = PRE_EXERCISE;
     }
@@ -172,7 +173,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
       float pitch_diff = 0;
-      float actual_pitch_diff = keyframes[curr_keyframe + 2];
+      float actual_pitch_diff = keyframes[key_frame_index + 2];
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
 
@@ -182,6 +183,11 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
           // key frame count ++
           light_counter = 1000;
           curr_keyframe++;
+
+          key_frame_index++;
+          if (key_frame_index >= num_keyframes) {
+            key_frame_index = 0;
+          }
           // set key frame data
           state_machine = RESPONSE;
         } 
@@ -200,7 +206,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       if (DEBUG_PRINTS) Serial.println("&& State: RESPONSE");
       // send timeout / key frame data
       Serial.print("Current keyframe: ");
-      Serial.println(curr_keyframe);
+      Serial.println(key_frame_index);
       state_machine = EXERCISE;
     }
       break;
