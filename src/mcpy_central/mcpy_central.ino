@@ -34,6 +34,8 @@
 #define EXER_INFO_SIZE        512
 #define PITCH_THRESHOLD       2
 
+#define CALIBRATION_TIME_MS 5000
+
 char print_string[STR_SIZE];
 
 BLEDevice joint, app;
@@ -51,7 +53,9 @@ BLECharacteristic rep_completion_characteristic;
 #define CTRL_CAL_DONE 1
 #define CTRL_EXER_START 2
 #define CTRL_EXER_DONE 3
-byte control_bits = 0b0000_0000;
+byte control_bits = 0b00000000;
+
+unsigned long calibration_timer;
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -140,17 +144,16 @@ void initBLE() {
 void updateState() {
   switch (state_machine) {
     case IDLE : {
-      if (control_bits[CTRL_CAL_START]) {
-        
+      if (bitRead(control_bits, CTRL_CAL_START)) {
+        calibration_timer = millis();
         state_machine = CALIBRATION;
       }
       break;
     }
     case CALIBRATION : {
-      if
-      break;
-    }
-    case PRE_EXERCISE : {
+      if (millis() - calibration_timer >= CALIBRATION_TIME_MS) {
+        state_machine = PRE_EXERCISE;
+      }
       break;
     }
     case EXERCISE : {
