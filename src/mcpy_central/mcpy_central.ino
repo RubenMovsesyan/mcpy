@@ -2,6 +2,7 @@
 // Scans for a accelerometer service
 
 #include <ArduinoBLE.h>
+#include <Servo.h>
 
 // --------------------------- BLE defines -------------------------
 
@@ -9,11 +10,13 @@
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
 #define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
 #define EXERCISE_INFO_CHARACTERISTIC_UUID "f75061a7-e391-4b61-ae4b-95812a2086e3"
+#define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
 
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+
 
 // --------------------------- BLE defines -------------------------
 
@@ -38,6 +41,7 @@ BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
+BLECharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite | BLENotify);
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -78,6 +82,7 @@ void initBLE() {
   // Construct the service to be advertised
   central_service.addCharacteristic(forward_characteristic);
   central_service.addCharacteristic(exercise_info_characteristic);
+  central_service.addCharacteristic(key_frame_hit_characteristic);
   BLE.addService(central_service);
 
   // Setup central advertising
@@ -147,7 +152,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       }
 
       Serial.println();
-
+      //unsigned long previousTime = millis();
       delay(5000);
       // "calibrate"
       calibrated = true;
@@ -173,6 +178,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
       float pitch_diff = 0;
+      
       float actual_pitch_diff = keyframes[key_frame_index + 2];
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
