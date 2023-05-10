@@ -10,12 +10,12 @@
 #define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
 #define EXERCISE_INFO_CHARACTERISTIC_UUID "f75061a7-e391-4b61-ae4b-95812a2086e3"
 #define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
+#define CONTROL_CHAR_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
 
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
-
 
 // --------------------------- BLE defines -------------------------
 
@@ -41,6 +41,10 @@ BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
 BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite | BLENotify);
+// BLEByteCharacteristic control_bits_characteristic(CONTROL_CHAR_UUID, BLERead); // This should actually be hosted by the app.
+
+BLECharacteristic pitch_diff_characteristic;
+BLECharacteristic rep_completion_characteristic;
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -260,8 +264,8 @@ void updateBLE() {
       return;
     }
 
-    BLECharacteristic rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
-    BLECharacteristic pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
+    rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
+    pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
 
     if (!rep_completion_characteristic) {
       Serial.println("Joint device does not have the expected characteristic(s).");
