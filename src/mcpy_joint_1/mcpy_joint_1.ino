@@ -143,7 +143,10 @@ void initBLE() {
   // Construct the service to be advertised.
   joint_service.addCharacteristic(rep_completion_characteristic);
   joint_service.addCharacteristic(pitch_diff_characteristic);
+<<<<<<< HEAD
   //joint_service.addCharacteristic(key_frame_characteristic);
+=======
+>>>>>>> 5a847ecb46210ec7d2d33e712496ce0541ba8aad
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -250,6 +253,14 @@ void updateBLE() {
 //      }
       pitch_diff_characteristic.setValue(diff);
       
+      pitch_diff_characteristic.setValue(diff);
+
+      if (diff < 2) {
+        rep_completion_characteristic.setValue(1);
+      } else {
+        rep_completion_characteristic.setValue(0);
+      }
+
       if (DEBUG_PRINT_BLE) {
         Serial.print("Joint pitch: ");
         Serial.print(joint_pitch);
