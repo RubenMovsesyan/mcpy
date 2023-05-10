@@ -2,7 +2,6 @@
 // Scans for a accelerometer service
 
 #include <ArduinoBLE.h>
-#include <Servo.h>
 
 // --------------------------- BLE defines -------------------------
 
@@ -41,7 +40,7 @@ BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
-BLECharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite | BLENotify);
+BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite | BLENotify);
 
 byte buf[4] = {0};
 float diff = 0.0;
