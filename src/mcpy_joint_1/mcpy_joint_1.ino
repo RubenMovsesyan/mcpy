@@ -16,6 +16,7 @@
 // local uuids
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
+//#define KEY_FRAME_CHARACTERISTIC_UUID "5f9652ee-feef-42ef-b296-281b01a9a450"
 
 // external uuids
 #define JOINT_ORITENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
@@ -84,6 +85,7 @@ BLEService joint_service(JOINT_SERVICE_UUID);
 BLEService external_service(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
+//BLEFloatCharacteristic key_frame_characteristic(KEY_FRAME_CHARACTERISTIC_UUID, BLERead);
 
 // Hardware variables
 /*
@@ -140,6 +142,8 @@ void initBLE() {
 
   // Construct the service to be advertised.
   joint_service.addCharacteristic(rep_completion_characteristic);
+  joint_service.addCharacteristic(pitch_diff_characteristic);
+  //joint_service.addCharacteristic(key_frame_characteristic);
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -239,12 +243,13 @@ void updateBLE() {
 
       float diff = fabs(joint_pitch - external_pitch);
 
-      if (diff < 2) {
-        rep_completion_characteristic.setValue(1);
-      } else {
-        rep_completion_characteristic.setValue(0);
-      }
-
+//      if (diff < 2) {
+//        rep_completion_characteristic.setValue(1);
+//      } else {
+//        rep_completion_characteristic.setValue(0);
+//      }
+      pitch_diff_characteristic.setValue(diff);
+      
       if (DEBUG_PRINT_BLE) {
         Serial.print("Joint pitch: ");
         Serial.print(joint_pitch);
