@@ -66,6 +66,7 @@ int state_machine;
 
 // -------- 1 second between key frames------------
 const long key_frame_interval = 1000;
+unsigned long prevTime, currTime;
 // -------- 1 second between key frames------------
 
 // -------- Exercise info variables ---------------
@@ -213,7 +214,7 @@ void updateStateMachine() {
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
-        unsigned long prevTime = millis();
+        prevTime = millis();
         state_machine = EXERCISE;
       }
     }
@@ -226,7 +227,7 @@ void updateStateMachine() {
       float pitch_diff = 0;
       timeout = 0;
       key_frame_hit = 0;
-      unsigned long currTime = millis();
+      currTime = millis();
       float actual_pitch_diff = keyframes[key_frame_index + 2];
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
