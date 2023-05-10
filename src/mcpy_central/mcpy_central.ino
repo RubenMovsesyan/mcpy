@@ -58,7 +58,8 @@ const long key_frame_interval = 1000;
 // -------- 1 second between key frames------------
 
 // -------- Exercise info variables ---------------
-
+int timeout;
+int key_frame_hit;
 int num_reps;
 int num_keyframes;
 float keyframes[EXER_INFO_SIZE - 2] = {0};
@@ -175,6 +176,7 @@ void updateStateMachine() {
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
+        unsigned long prevTime = millis();
         state_machine = EXERCISE;
       }
     }
@@ -185,7 +187,9 @@ void updateStateMachine() {
       // memcpy(&rep_completion, buf, 4);
       // forward_characteristic.setValue(rep_completion);
       float pitch_diff = 0;
-      
+      timeout = 0;
+      key_frame_hit = 0;
+      unsigned long currTime = millis();
       float actual_pitch_diff = keyframes[key_frame_index + 2];
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
@@ -193,6 +197,7 @@ void updateStateMachine() {
       if (curr_keyframe < num_reps * num_keyframes) {
         Serial.println(fabs(pitch_diff - actual_pitch_diff));
         if (fabs(pitch_diff - actual_pitch_diff) <= PITCH_THRESHOLD) {
+          key_frame_hit = 1;
           // key frame count ++
           light_counter = 1000;
           curr_keyframe++;
@@ -204,8 +209,9 @@ void updateStateMachine() {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        else if (/* timeout */) {
-           key_frame_hit_characteristic.writeValue(1);
+        else if (currTime - prevTime > key_frame_interval) {
+           prevTime = millis();
+           timeout = 1;
            state_machine = RESPONSE;
         }
       } else if (curr_keyframe >= num_reps * num_keyframes) {
@@ -218,6 +224,15 @@ void updateStateMachine() {
     case RESPONSE: {
       if (DEBUG_PRINTS) Serial.println("&& State: RESPONSE");
       // send timeout / key frame data
+      if (timeout && !key_frame_hit){
+        key_frame_hit_characteristic.writeValue(1);
+      }
+      else if (!timeout && !key_frame_hit){
+        key_frame_hit_characteristic.writeValue(0);
+      }
+      else if (!timeout && key_frame_hit){
+        key_frame_hit_characteristic.writeValue(2);
+      }
       Serial.print("Current keyframe: ");
       Serial.println(key_frame_index);
       state_machine = EXERCISE;
