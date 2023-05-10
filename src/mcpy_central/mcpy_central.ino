@@ -10,6 +10,7 @@
 #define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
 #define EXERCISE_INFO_CHARACTERISTIC_UUID "f75061a7-e391-4b61-ae4b-95812a2086e3"
 #define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
+#define KEY_FRAME_CHAR_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
 #define CONTROL_CHAR_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
 
 // UUIDs for joint device
@@ -18,9 +19,6 @@
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 
 // --------------------------- BLE defines -------------------------
-
-
-// ------ State Machine defines ------
 
 #define IDLE                  0
 #define CALIBRATION           1
@@ -46,7 +44,16 @@ BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite |
 // BLEByteCharacteristic control_bits_characteristic(CONTROL_CHAR_UUID, BLERead); // This should actually be hosted by the app.
 
 BLECharacteristic pitch_diff_characteristic;
+BLECharacteristic key_frame_characteristic;
 BLECharacteristic rep_completion_characteristic;
+
+enum state {
+  idle_s,
+  calibrate_s,
+  pre_exercise_s,
+  exercise_s,
+  response_s
+};
 
 // Control bit definitions [which bit in the control_bits byte controls what :) ]
 #define CTRL_CAL_START 0
@@ -141,26 +148,39 @@ void initBLE() {
   BLE.stopScan();
 }
 
-
-void updateState() {
-  switch (state_machine) {
-    case IDLE : {
+// To avoid an excessive number of states the state machine is Mealy meaning it
+// performs changes *on state transitions* and not exclusively within states.
+// TLDR: This function performs state transitions and side effects associated
+// with those state transitions but NOTHING MORE.
+void transitionState() {
+  switch (state) {
+    case idle_s : {
       if (bitRead(control_bits, CTRL_CAL_START)) {
         calibration_timer = millis();
-        state_machine = CALIBRATION;
+        state = calibrate_s;
       }
       break;
     }
-    case CALIBRATION : {
+    case calibrate_s : {
       if (millis() - calibration_timer >= CALIBRATION_TIME_MS) {
-        state_machine = PRE_EXERCISE;
+        // write CTRL_CAL_DONE to control_bits characteristic.
+        bitWrite(control_bits, CTRL_CAL_DONE, 1);
+        // maybe also write what the starting angles are to phone.
+        state = pre_exercise_s;
       }
       break;
     }
-    case EXERCISE : {
+    case pre_exercise_s : {
+      // wait to receive the first keyframe.
+      if (key_frame_characteristic.written()) {
+        state = exercise_s;
+      }
       break;
     }
-    case RESPONSE : {
+    case exercise_s : {
+      break;
+    }
+    case response_s : {
       break;
     }
     default : break;
@@ -319,6 +339,7 @@ void updateBLE() {
 
     rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
     pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
+    key_frame_characteristic = app.characteristic(KEY_FRAME_CHAR_UUID);
 
     if (!rep_completion_characteristic) {
       Serial.println("Joint device does not have the expected characteristic(s).");
