@@ -47,13 +47,14 @@ BLECharacteristic pitch_diff_characteristic;
 BLECharacteristic key_frame_characteristic;
 BLECharacteristic rep_completion_characteristic;
 
-enum state {
+typedef enum state_t {
   idle_s,
   calibrate_s,
   pre_exercise_s,
   exercise_s,
   response_s
 };
+state_t state;
 
 // Control bit definitions [which bit in the control_bits byte controls what :) ]
 #define CTRL_CAL_START 0
@@ -62,18 +63,16 @@ enum state {
 #define CTRL_EXER_DONE 3
 byte control_bits = 0b00000000;
 
-unsigned long calibration_timer;
+unsigned long calibration_time, rep_time;
 
 byte buf[4] = {0};
 float diff = 0.0;
 byte exer_info_buf[EXER_INFO_SIZE] = {0};
-// int calibration_timer;
 
 int state_machine;
 
 // -------- 1 second between key frames------------
 const long key_frame_interval = 1000;
-unsigned long prevTime, currTime;
 // -------- 1 second between key frames------------
 
 // -------- Exercise info variables ---------------
@@ -156,13 +155,13 @@ void transitionState() {
   switch (state) {
     case idle_s : {
       if (bitRead(control_bits, CTRL_CAL_START)) {
-        calibration_timer = millis();
+        calibration_time = millis();
         state = calibrate_s;
       }
       break;
     }
     case calibrate_s : {
-      if (millis() - calibration_timer >= CALIBRATION_TIME_MS) {
+      if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
         // write CTRL_CAL_DONE to control_bits characteristic.
         bitWrite(control_bits, CTRL_CAL_DONE, 1);
         // maybe also write what the starting angles are to phone.
@@ -234,7 +233,7 @@ void updateStateMachine() {
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
-        prevTime = millis();
+        rep_time = millis();
         state_machine = EXERCISE;
       }
     }
@@ -247,7 +246,6 @@ void updateStateMachine() {
       float pitch_diff = 0;
       timeout = 0;
       key_frame_hit = 0;
-      currTime = millis();
       float actual_pitch_diff = keyframes[key_frame_index + 2];
       pitch_diff_characteristic.readValue(buf, 4);
       memcpy(&pitch_diff, buf, 4);
@@ -267,8 +265,8 @@ void updateStateMachine() {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        else if (currTime - prevTime > key_frame_interval) {
-           prevTime = millis();
+        else if (millis() - rep_time > key_frame_interval) {
+           rep_time = millis();
            timeout = 1;
            state_machine = RESPONSE;
         }
