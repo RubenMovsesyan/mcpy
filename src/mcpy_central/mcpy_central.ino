@@ -49,6 +49,10 @@ byte exer_info_buf[EXER_INFO_SIZE] = {0};
 
 int state_machine;
 
+// -------- 1 second between key frames------------
+const long key_frame_interval = 1000;
+// -------- 1 second between key frames------------
+
 // -------- Exercise info variables ---------------
 
 int num_reps;
@@ -151,7 +155,7 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
       }
 
       Serial.println();
-      //unsigned long previousTime = millis();
+      
       delay(5000);
       // "calibrate"
       calibrated = true;
@@ -196,10 +200,10 @@ void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        // else if (/* timeout */) {
-        //   // set timeout data
-        //   state_machine = RESPONSE;
-        // }
+        else if (/* timeout */) {
+           key_frame_hit_characteristic.writeValue(1);
+           state_machine = RESPONSE;
+        }
       } else if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = PRE_EXERCISE;
       } else {
