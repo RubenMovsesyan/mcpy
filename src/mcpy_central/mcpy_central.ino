@@ -128,7 +128,7 @@ void initBLE() {
   BLE.stopScan();
 }
 
-void updateStateMachine(BLECharacteristic pitch_diff_characteristic) {
+void updateStateMachine() {
   switch(state_machine) {
     case IDLE: {
       if (DEBUG_PRINTS) Serial.println("&& State: IDLE");
@@ -278,7 +278,7 @@ void updateBLE() {
     }
 
     while (app.connected() && joint.connected()) {
-      updateStateMachine(pitch_diff_characteristic);
+      updateStateMachine();
       tempTurnLightOn();
     }
 
