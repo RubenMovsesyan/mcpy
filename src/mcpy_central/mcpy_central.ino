@@ -46,6 +46,13 @@ BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite |
 BLECharacteristic pitch_diff_characteristic;
 BLECharacteristic rep_completion_characteristic;
 
+// Control bit definitions [which bit in the control_bits byte controls what :) ]
+#define CTRL_CAL_START 0
+#define CTRL_CAL_DONE 1
+#define CTRL_EXER_START 2
+#define CTRL_EXER_DONE 3
+byte control_bits = 0b0000_0000;
+
 byte buf[4] = {0};
 float diff = 0.0;
 byte exer_info_buf[EXER_INFO_SIZE] = {0};
@@ -128,6 +135,33 @@ void initBLE() {
   }
 
   BLE.stopScan();
+}
+
+
+void updateState() {
+  switch (state_machine) {
+    case IDLE : {
+      if (control_bits[CTRL_CAL_START]) {
+        
+        state_machine = CALIBRATION;
+      }
+      break;
+    }
+    case CALIBRATION : {
+      if
+      break;
+    }
+    case PRE_EXERCISE : {
+      break;
+    }
+    case EXERCISE : {
+      break;
+    }
+    case RESPONSE : {
+      break;
+    }
+    default : break;
+  }
 }
 
 void updateStateMachine() {
