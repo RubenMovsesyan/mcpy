@@ -33,6 +33,7 @@
 #define PITCH_THRESHOLD       2
 
 #define CALIBRATION_TIME_MS 5000
+#define KEY_TIMEOUT_MS 1000
 
 char print_string[STR_SIZE];
 
@@ -59,11 +60,10 @@ state_t state;
 // Control bit definitions [which bit in the control_bits byte controls what :) ]
 #define CTRL_CAL_START 0
 #define CTRL_CAL_DONE 1
-#define CTRL_EXER_START 2
-#define CTRL_EXER_DONE 3
+#define CTRL_EXER_DONE 2
 byte control_bits = 0b00000000;
 
-unsigned long calibration_time, rep_time;
+unsigned long calibration_time, key_time;
 
 byte buf[4] = {0};
 float diff = 0.0;
@@ -170,20 +170,38 @@ void transitionState() {
       break;
     }
     case pre_exercise_s : {
-      // wait to receive the first keyframe.
-      if (key_frame_characteristic.written()) {
+      // wait to receive the first key frame.
+      if (key_frame_characteristic.valueUpdated()) {
+        key_time = millis();
         state = exercise_s;
       }
       break;
     }
     case exercise_s : {
+      if (keyFrameHit()) {
+        // write KEY_FRAME_SUCCESS to phone.
+        state = response_s;
+      } else if (millis() - key_time >= KEY_TIMEOUT_MS) {
+        // write KEY_FRAME_FAILURE to phone.
+        state = response_s;
+      }
       break;
     }
     case response_s : {
+      // wait to receive a new key frame.
+      if (readBit(control_bits, CTRL_EXER_DONE)) {
+        state = idle_s;
+      } else if (key_frame_characteristic.valueUpdated()) {
+        state = exercise_s;
+      }
       break;
     }
     default : break;
   }
+}
+
+bool keyFrameHit() {
+  return false;
 }
 
 void updateStateMachine() {
@@ -233,7 +251,7 @@ void updateStateMachine() {
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
-        rep_time = millis();
+        key_tim = millis();
         state_machine = EXERCISE;
       }
     }
@@ -265,8 +283,8 @@ void updateStateMachine() {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        else if (millis() - rep_time > key_frame_interval) {
-           rep_time = millis();
+        else if (millis() - key_tim > key_frame_interval) {
+           key_tim = millis();
            timeout = 1;
            state_machine = RESPONSE;
         }
