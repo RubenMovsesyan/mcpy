@@ -283,7 +283,7 @@ void updateStateMachine() {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        else if (millis() - key_time > key_frame_interval) {
+        else if (millis() - key_time > KEY_TIMEOUT_MS) {
            key_time = millis();
            timeout = 1;
            state_machine = RESPONSE;
