@@ -51,7 +51,7 @@ BLECharacteristic rep_completion_characteristic;
 #define CTRL_CAL_DONE 1
 #define CTRL_EXER_START 2
 #define CTRL_EXER_DONE 3
-byte control_bits = 0b0000_0000;
+byte control_bits = 0b00000000;
 
 byte buf[4] = {0};
 float diff = 0.0;
