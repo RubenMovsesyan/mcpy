@@ -154,8 +154,8 @@ void transitionState() {
         calibration_time = millis();
         state = calibrate_s;
       }
-      break;
     }
+    break;
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
         // write CTRL_CAL_DONE to control_bits characteristic.
@@ -163,16 +163,16 @@ void transitionState() {
         // maybe also write what the starting angles are to phone.
         state = pre_exercise_s;
       }
-      break;
     }
+    break;
     case pre_exercise_s : {
       // wait to receive the first key frame.
       if (key_frame_characteristic.valueUpdated()) {
         key_time = millis();
         state = exercise_s;
       }
-      break;
     }
+    break;
     case exercise_s : {
 
       if (keyFrameHit()) {
@@ -184,8 +184,8 @@ void transitionState() {
         // write KEY_FRAME_FAILURE to phone.
         state = response_s;
       }
-      break;
     }
+    break;
     case response_s : {
       // wait to receive a new key frame.
       if (bitRead(control_bits, CTRL_EXER_DONE)) {
@@ -194,8 +194,8 @@ void transitionState() {
       } else if (key_frame_characteristic.valueUpdated()) {
         state = exercise_s;
       }
-      break;
     }
+    break;
     default : break;
   }
 }
