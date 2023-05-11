@@ -155,6 +155,7 @@ void transitionState() {
   switch (state) {
     case idle_s : {
       if (bitRead(control_bits, CTRL_CAL_START)) {
+        bitWrite(control_bits, CTRL_CAL_START, 0);
         calibration_time = millis();
         state = calibrate_s;
       }
@@ -190,6 +191,7 @@ void transitionState() {
     case response_s : {
       // wait to receive a new key frame.
       if (bitRead(control_bits, CTRL_EXER_DONE)) {
+        bitWrite(control_bits, CTRL_EXER_DONE, 0);
         state = idle_s;
       } else if (key_frame_characteristic.valueUpdated()) {
         state = exercise_s;
