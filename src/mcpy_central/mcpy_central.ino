@@ -121,9 +121,7 @@ void updateState() {
     break;
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
-        // write CTRL_CAL_DONE to control_bits characteristic.
-        // bitWrite(control_bits, CTRL_CAL_DONE, 1);
-        // maybe also write what the starting angles are to phone.
+        // SEND RESET SIGNAL TO BNOs TO SET THEM TO <0, 0, 0>!
         state = pre_exercise_s;
       }
     }
@@ -138,11 +136,9 @@ void updateState() {
     break;
     case exercise_s : {
       if (keyFrameHit()) {
-        // write KEY_FRAME_SUCCESS to phone.
         key_frame_hit_characteristic.writeValue(KF_SUCCESS);
         state = response_s;
       } else if (millis() - key_time >= KEY_TIMEOUT_MS) {
-        // write KEY_FRAME_FAILURE to phone.
         key_frame_hit_characteristic.writeValue(KF_MISS);
         state = response_s;
       }
@@ -155,6 +151,7 @@ void updateState() {
         control_bits_characteristic.writeValue(control_bits);
         state = idle_s;
       } else if (key_frame_data_characteristic.written()) {
+        key_time = millis();
         state = exercise_s;
       }
     }
