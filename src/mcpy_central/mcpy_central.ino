@@ -23,6 +23,9 @@
 #define KF_MISS 0
 #define KF_SUCCESS 1
 
+// PIN Defines
+#define BNO_RESET_PIN D2
+
 // BLE Global Variables
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
@@ -122,6 +125,10 @@ void updateState() {
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
         // SEND RESET SIGNAL TO BNOs TO SET THEM TO <0, 0, 0>!
+        digitalWrite(BNO_RESET_PIN, LOW);
+        delayMicroseconds(1);
+        digitalWrite(BNO_RESET_PIN, HIGH);
+        delay(1000); // delay for at least 800ms for BNO to restart.
         state = pre_exercise_s;
       }
     }
@@ -213,6 +220,10 @@ void setup() {
   Serial.begin(9600);
   // while (!Serial); // only use this line if the serial monitor is needed
   delay(2000);
+
+  pinMode(BNO_RESET_PIN, OUTPUT);
+  digitalWrite(BNO_RESET_PIN, HIGH); // Reset is active low.
+
   Serial.println("Starting Mcpy central device...");
 
   initBLE();
