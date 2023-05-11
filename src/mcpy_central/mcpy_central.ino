@@ -41,7 +41,7 @@ BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
-BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLEWrite | BLENotify);
+BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
 // BLEByteCharacteristic control_bits_characteristic(CONTROL_CHAR_UUID, BLERead); // This should actually be hosted by the app.
 
 BLECharacteristic pitch_diff_characteristic;
@@ -70,11 +70,6 @@ float diff = 0.0;
 byte exer_info_buf[EXER_INFO_SIZE] = {0};
 
 int state_machine;
-
-// -------- 1 second between key frames------------
-const long key_frame_interval = 1000;
-// -------- 1 second between key frames------------
-
 // -------- Exercise info variables ---------------
 int timeout;
 int key_frame_hit;
@@ -179,10 +174,13 @@ void transitionState() {
       break;
     }
     case exercise_s : {
+
       if (keyFrameHit()) {
         // write KEY_FRAME_SUCCESS to phone.
+        key_frame_hit_characteristic.writeValue(2);
         state = response_s;
       } else if (millis() - key_time >= KEY_TIMEOUT_MS) {
+        key_frame_hit_characteristic.writeValue(1);
         // write KEY_FRAME_FAILURE to phone.
         state = response_s;
       }
