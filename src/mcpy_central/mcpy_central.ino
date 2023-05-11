@@ -7,8 +7,6 @@
 
 // Local UUIDs
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
-#define FORWARD_CHARACTERISTIC_UUID "a59d3afb-5010-43f0-a241-1ad27e92d7b9"
-#define EXERCISE_INFO_CHARACTERISTIC_UUID "f75061a7-e391-4b61-ae4b-95812a2086e3"
 #define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
 #define KEY_FRAME_DATA_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
 #define CONTROL_BITS_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
@@ -39,14 +37,11 @@ char print_string[STR_SIZE];
 
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
-BLEFloatCharacteristic forward_characteristic(FORWARD_CHARACTERISTIC_UUID, BLERead | BLENotify);
-BLECharacteristic exercise_info_characteristic(EXERCISE_INFO_CHARACTERISTIC_UUID, BLERead | BLEWrite | BLENotify, EXER_INFO_SIZE);
-BLEIntCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
-// BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead); // This should actually be hosted by the app.
-
+BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
+BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
+BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
+// BLEDoubleCharacteristic pitch_diff_characteristic; // from joint device
 BLECharacteristic pitch_diff_characteristic;
-BLECharacteristic key_frame_characteristic;
-BLECharacteristic rep_completion_characteristic;
 
 typedef enum state_t {
   idle_s,
@@ -59,8 +54,7 @@ state_t state;
 
 // Control bit definitions [which bit in the control_bits byte controls what :) ]
 #define CTRL_CAL_START 0
-#define CTRL_CAL_DONE 1
-#define CTRL_EXER_DONE 2
+#define CTRL_EXER_DONE 1
 byte control_bits = 0b00000000;
 
 unsigned long calibration_time, key_time;
@@ -68,6 +62,7 @@ unsigned long calibration_time, key_time;
 byte buf[4] = {0};
 float diff = 0.0;
 byte exer_info_buf[EXER_INFO_SIZE] = {0};
+double pitch_diff = 0.0;
 
 int state_machine;
 // -------- Exercise info variables ---------------
@@ -101,8 +96,6 @@ void initBLE() {
   Serial.println("Successfully initialized Bluetooth® Low Energy module.");
 
   // Construct the service to be advertised
-  central_service.addCharacteristic(forward_characteristic);
-  central_service.addCharacteristic(exercise_info_characteristic);
   central_service.addCharacteristic(key_frame_hit_characteristic);
   BLE.addService(central_service);
 
@@ -159,7 +152,7 @@ void transitionState() {
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
         // write CTRL_CAL_DONE to control_bits characteristic.
-        bitWrite(control_bits, CTRL_CAL_DONE, 1);
+        // bitWrite(control_bits, CTRL_CAL_DONE, 1);
         // maybe also write what the starting angles are to phone.
         state = pre_exercise_s;
       }
@@ -167,7 +160,7 @@ void transitionState() {
     break;
     case pre_exercise_s : {
       // wait to receive the first key frame.
-      if (key_frame_characteristic.valueUpdated()) {
+      if (key_frame_data_characteristic.valueUpdated()) {
         key_time = millis();
         state = exercise_s;
       }
@@ -191,7 +184,7 @@ void transitionState() {
       if (bitRead(control_bits, CTRL_EXER_DONE)) {
         bitWrite(control_bits, CTRL_EXER_DONE, 0);
         state = idle_s;
-      } else if (key_frame_characteristic.valueUpdated()) {
+      } else if (key_frame_data_characteristic.valueUpdated()) {
         state = exercise_s;
       }
     }
@@ -208,19 +201,6 @@ void updateStateMachine() {
   switch(state_machine) {
     case IDLE: {
       if (DEBUG_PRINTS) Serial.println("&& State: IDLE");
-
-      if (exercise_info_characteristic.written()) {
-        exercise_info_characteristic.readValue(exer_info_buf, EXER_INFO_SIZE);
-        // distribute exercise info into variables
-        num_reps = exer_info_buf[0];
-        num_keyframes = exer_info_buf[1];
-        // memcpy(keyframes, exer_info_buf, EXER_INFO_SIZE - 2);
-        // for (int i = 0; i < (EXER_INFO_SIZE - 2) / 4; i += 4) {
-        //   keyframes[i] = exer_info_buf[(i / 4) + 2];
-        // }
-        calibrated = false;
-        state_machine = CALIBRATION;
-      }
     }
       break;
     case CALIBRATION: {
@@ -260,7 +240,6 @@ void updateStateMachine() {
       if (DEBUG_PRINTS) Serial.println("&& State: EXERCISE");
       // rep_completion_characteristic.readValue(buf, 4);
       // memcpy(&rep_completion, buf, 4);
-      // forward_characteristic.setValue(rep_completion);
       float pitch_diff = 0;
       timeout = 0;
       key_frame_hit = 0;
@@ -352,20 +331,7 @@ void updateBLE() {
       joint.disconnect();
       return;
     }
-
-    rep_completion_characteristic = joint.characteristic(REP_COMPLETION_CHARACTERISTIC_UUID);
     pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
-    key_frame_characteristic = app.characteristic(KEY_FRAME_DATA_UUID);
-
-    if (!rep_completion_characteristic) {
-      Serial.println("Joint device does not have the expected characteristic(s).");
-      joint.disconnect();
-      return;
-    } else if (!rep_completion_characteristic.canSubscribe()) {
-      Serial.println("Cannot subscribe to the Joint device's characteristic(s).");
-      joint.disconnect();
-      return;
-    }
 
     while (app.connected() && joint.connected()) {
       updateStateMachine();

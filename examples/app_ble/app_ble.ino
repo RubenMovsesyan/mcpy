@@ -10,7 +10,7 @@
 
 BLEDevice app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
-BLEFloatCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
+BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLERead | BLENotify);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
 
