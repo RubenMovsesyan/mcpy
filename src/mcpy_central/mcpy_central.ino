@@ -17,28 +17,19 @@
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 
 // ------------------------- Exercise Defines ----------------------
-#define GRACE_ANGLE_DEGREES 15
-
-// ------ State Machine defines ------
-
-#define STR_SIZE              64
-#define PITCH_THRESHOLD       2
-
+#define GRACE_ANGLE_DEGREES 2
 #define CALIBRATION_TIME_MS 5000
 #define KEY_TIMEOUT_MS 1000
+#define KF_MISS 0
+#define KF_SUCCESS 1
 
-char print_string[STR_SIZE];
-
+// BLE Global Variables
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
-// BLEDoubleCharacteristic pitch_diff_characteristic; // from joint device
-BLECharacteristic pitch_diff_characteristic;
-
-#define KF_MISS 0
-#define KF_SUCCESS 1
+BLECharacteristic pitch_diff_characteristic; // from joint device
 
 typedef enum state_t {
   idle_s,
@@ -49,20 +40,21 @@ typedef enum state_t {
 };
 state_t state;
 
-// Control bit definitions [which bit in the control_bits byte controls what :) ]
+// Control bit definitions.
+// which bit in the control_bits byte controls what :)
 #define CTRL_CAL_START 0
 #define CTRL_EXER_DONE 1
 byte control_bits = 0b00000000;
 
 unsigned long calibration_time, key_time;
+double correct_pitch_diff, pitch_diff;
 
-byte buf[4] = {0};
-double correct_pitch_diff = 0.0, pitch_diff = 0.0;
+// buffer for reading in from (peripheral) untyped characteristics
+byte buf[8] = {0};
 
 // -------- Debug defines ---------
 
 #define DEBUG_PRINTS 1
-
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -116,7 +108,7 @@ void initBLE() {
 // performs changes *on state transitions* and not exclusively within states.
 // TLDR: This function performs state transitions and side effects associated
 // with those state transitions but NOTHING MORE.
-void transitionState() {
+void updateState() {
   switch (state) {
     case idle_s : {
       if (bitRead(control_bits, CTRL_CAL_START)) {
@@ -138,21 +130,20 @@ void transitionState() {
     break;
     case pre_exercise_s : {
       // wait to receive the first key frame.
-      if (key_frame_data_characteristic.valueUpdated()) {
+      if (key_frame_data_characteristic.written()) {
         key_time = millis();
         state = exercise_s;
       }
     }
     break;
     case exercise_s : {
-
       if (keyFrameHit()) {
         // write KEY_FRAME_SUCCESS to phone.
-        key_frame_hit_characteristic.writeValue(KF_MISS);
+        key_frame_hit_characteristic.writeValue(KF_SUCCESS);
         state = response_s;
       } else if (millis() - key_time >= KEY_TIMEOUT_MS) {
-        key_frame_hit_characteristic.writeValue(KF_SUCCESS);
         // write KEY_FRAME_FAILURE to phone.
+        key_frame_hit_characteristic.writeValue(KF_MISS);
         state = response_s;
       }
     }
@@ -163,7 +154,7 @@ void transitionState() {
         bitWrite(control_bits, CTRL_EXER_DONE, 0);
         control_bits_characteristic.writeValue(control_bits);
         state = idle_s;
-      } else if (key_frame_data_characteristic.valueUpdated()) {
+      } else if (key_frame_data_characteristic.written()) {
         state = exercise_s;
       }
     }
@@ -206,7 +197,7 @@ void updateBLE() {
     pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
 
     while (app.connected() && joint.connected()) {
-      transitionState();
+      updateState();
     }
 
     if (!app.connected()) {
@@ -214,14 +205,12 @@ void updateBLE() {
       Serial.println(app.address());
     }
 
-    if (joint.connected()) {
+    if (!joint.connected()) {
       Serial.print("Disconnected from Joint MAC: ");
       Serial.println(joint.address());
     }
   }
 }
-
-// Arduino Functions \/ ------------------------------------------ \/
  
 void setup() {
   Serial.begin(9600);
