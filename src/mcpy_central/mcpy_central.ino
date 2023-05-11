@@ -189,7 +189,7 @@ void transitionState() {
     }
     case response_s : {
       // wait to receive a new key frame.
-      if (readBit(control_bits, CTRL_EXER_DONE)) {
+      if (bitRead(control_bits, CTRL_EXER_DONE)) {
         state = idle_s;
       } else if (key_frame_characteristic.valueUpdated()) {
         state = exercise_s;
@@ -251,7 +251,7 @@ void updateStateMachine() {
       if (curr_keyframe >= num_reps * num_keyframes) {
         state_machine = IDLE;
       } else {
-        key_tim = millis();
+        key_time = millis();
         state_machine = EXERCISE;
       }
     }
@@ -283,8 +283,8 @@ void updateStateMachine() {
           // set key frame data
           state_machine = RESPONSE;
         } 
-        else if (millis() - key_tim > key_frame_interval) {
-           key_tim = millis();
+        else if (millis() - key_time > key_frame_interval) {
+           key_time = millis();
            timeout = 1;
            state_machine = RESPONSE;
         }
