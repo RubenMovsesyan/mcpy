@@ -23,6 +23,8 @@
 #define KF_MISS 0
 #define KF_SUCCESS 1
 
+#define ANGLE_SIZE_BYTES sizeof(float)
+
 // PIN Defines
 #define BNO_RESET_PIN D2
 
@@ -54,7 +56,7 @@ unsigned long calibration_time, key_time;
 float correct_pitch_diff, pitch_diff;
 
 // buffer for reading in from (peripheral) untyped characteristics
-byte buf[4] = {0};
+byte buf[ANGLE_SIZE_BYTES] = {0};
 
 // -------- Debug defines ---------
 
@@ -140,13 +142,14 @@ void updateState() {
     case pre_exercise_s : {
       // wait to receive the first key frame.
       if (key_frame_data_characteristic.written()) {
-        key_frame_data_characteristic.readValue(&correct_pitch_diff, 4);
+        key_frame_data_characteristic.readValue(&correct_pitch_diff, ANGLE_SIZE_BYTES);
         key_time = millis();
         state = exercise_s;
       }
     }
     break;
     case exercise_s : {
+      pitch_diff_characteristic.readValue(&pitch_diff, ANGLE_SIZE_BYTES);
       if (keyFrameHit()) {
         key_frame_hit_characteristic.writeValue(KF_SUCCESS);
         state = response_s;
@@ -164,6 +167,7 @@ void updateState() {
         control_bits_characteristic.writeValue(control_bits);
         state = idle_s;
       } else if (key_frame_data_characteristic.written()) {
+        key_frame_data_characteristic.readValue(&correct_pitch_diff, ANGLE_SIZE_BYTES);
         key_time = millis();
         state = exercise_s;
       }
