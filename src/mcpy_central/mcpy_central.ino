@@ -13,8 +13,8 @@
 
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
-#define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+#define RESET_BNO_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
 
 // ------------------------- Exercise Defines ----------------------
 #define GRACE_ANGLE_DEGREES 2
