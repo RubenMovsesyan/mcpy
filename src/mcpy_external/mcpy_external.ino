@@ -12,6 +12,7 @@
 #define EXTERNAL_SERVICE_UUID "56176a63-d563-43f4-b239-636f41b63c6d"
 #define JOINT_ORITENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
 #define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
+#define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
 
 // --------------------------- Hardware defines --------------------
 
@@ -19,6 +20,8 @@
 #define RED             D2
 #define GREEN           D3
 #define BLUE            D4
+
+#define BNO_RESET       D12
 
 // Motors
 #define UP_MOTOR        D9
@@ -42,11 +45,13 @@
 BLEService externalService(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic joint_orientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite);
 BLEFloatCharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLEBoolCharacteristic reset_BNO(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID, BLEWrite);
 BLEDevice joint;
 
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector;
 float joint_pitch, external_pitch;
+bool bno_reset;
 
 char printString [64];
 byte buf[4] = {0};
@@ -63,6 +68,12 @@ void initHardware() {
 
   Serial.println("\nBNO055 Found!");
   bno.enterNormalMode();
+
+  // init bno reset pin
+  pinMode(BNO_RESET, OUTPUT);
+  digitalWrite(BNO_RESET, HIGH);
+
+  bno_reset = false;
 
   // init rgb pins
   pinMode(RED,          OUTPUT);
@@ -94,6 +105,7 @@ void initBLE() {
   // Construct the service to be advertised.
   externalService.addCharacteristic(joint_orientation);
   externalService.addCharacteristic(external_orientation);
+  externalService.addCharacteristic(reset_BNO);
   BLE.addService(externalService);
 
   // Setup peripheral advertising.
@@ -188,6 +200,16 @@ void updateBLE() {
       joint_orientation.readValue(buf, 4);
       memcpy(&joint_pitch, buf, 4);
       external_orientation.setValue(external_pitch);
+
+      if (reset_BNO.isWritten()) {
+        reset_BNO.readValue(&bno_reset, 1);
+        if (bno_reset) {
+          digitalWrite(BNO_RESET, LOW);
+          delayMicroseconds(1);
+          digitalWrite(BNO_RESET, HIGH);
+          delay(800);
+        }
+      }
     }
 
     Serial.println("Disconnected from joint MAC: ");
