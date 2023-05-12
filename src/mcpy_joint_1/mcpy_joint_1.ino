@@ -19,12 +19,17 @@
 //#define KEY_FRAME_CHARACTERISTIC_UUID "5f9652ee-feef-42ef-b296-281b01a9a450"
 
 // external uuids
-#define JOINT_ORITENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
+#define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
 #define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
+#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
+#define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
 
 // --------------------------- BLE defines -------------------------
 
 // --------------------------- Hardware defines --------------------
+
+// Reset BNO
+#define BNO_RESET       D12
 
 // RGB LED
 #define RED             D2
@@ -60,7 +65,7 @@
 #define DEBUG_PRINT_STATUS 0
 
 // ------ Other defines -------
-
+bool reset_bno_joint;
 // ---- Hardware functions ----
 
 uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
@@ -77,7 +82,7 @@ imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector;
 float joint_pitch, external_pitch;
 char print_string[STR_SIZE];
 // buffer for sending and recieving float data over BLE
-byte buf[4] = {0};
+byte buf[8] = {0};
 
 // BLE variables
 BLEDevice central, external;
@@ -85,6 +90,8 @@ BLEService joint_service(JOINT_SERVICE_UUID);
 BLEService external_service(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
+BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLEWrite);
+BLECharacteristic reset_bno_external_characteristic;
 //BLEFloatCharacteristic key_frame_characteristic(KEY_FRAME_CHARACTERISTIC_UUID, BLERead);
 
 // Hardware variables
@@ -111,6 +118,8 @@ void initHardware() {
 
   Serial.println("\nBNO055 Found!");
   bno.enterNormalMode();
+
+  reset_bno_joint = false;
 
   // init rgb pins
   pinMode(RED,          OUTPUT);
@@ -219,8 +228,8 @@ void updateBLE() {
       external.disconnect();
       return;
     }
-
-    BLECharacteristic joint_orientation = external.characteristic(JOINT_ORITENTATION_CHARACTERISTIC_UUID);
+    BLECharacteristic reset_bno_external_characteristic = external.characteristic(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID);
+    BLECharacteristic joint_orientation = external.characteristic(JOINT_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
 
     if (!joint_orientation || !external_orientation) {
@@ -232,15 +241,25 @@ void updateBLE() {
       external.disconnect();
       return;
     }
-
+    
     while (central.connected() && external.connected()) {
+      if (reset_bno_joint_characteristic.written()){
+        reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
+        if (reset_bno_joint){
+          buf[0] = true;
+          reset_bno_external_characteristic.writeValue(buf[0], 1);
+          digitalWrite(BNO_RESET, LOW);
+          delayMicroseconds(1);
+          digitalWrite(BNO_RESET, HIGH);
+          delay(1000);
+        }
+      }
       updateHardware();
       memcpy(buf, &joint_pitch, 4);
       joint_orientation.setValue(buf, 4);
-
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
-
+      
       float diff = fabs(joint_pitch - external_pitch);
 
 //      if (diff < 2) {

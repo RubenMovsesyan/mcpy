@@ -201,13 +201,13 @@ void updateBLE() {
       memcpy(&joint_pitch, buf, 4);
       external_orientation.setValue(external_pitch);
 
-      if (reset_BNO.isWritten()) {
+      if (reset_BNO.written()) {
         reset_BNO.readValue(&bno_reset, 1);
         if (bno_reset) {
           digitalWrite(BNO_RESET, LOW);
           delayMicroseconds(1);
           digitalWrite(BNO_RESET, HIGH);
-          delay(800);
+          delay(1000);
         }
       }
     }
