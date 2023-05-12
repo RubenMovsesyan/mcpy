@@ -29,7 +29,7 @@
 // --------------------------- Hardware defines --------------------
 
 // Reset BNO
-#define BNO_RESET       D12
+#define BNO_RESET       D5
 
 // RGB LED
 #define RED             D2
@@ -77,7 +77,7 @@ uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
 // ----- Global Variables -----
 
 Adafruit_BNO055 bno;
-imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector;
+imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, starting_vector;
 
 float joint_pitch, external_pitch;
 char print_string[STR_SIZE];
@@ -90,7 +90,7 @@ BLEService joint_service(JOINT_SERVICE_UUID);
 BLEService external_service(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
-BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLEWrite);
+BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLERead | BLEWrite);
 BLECharacteristic reset_bno_external_characteristic;
 //BLEFloatCharacteristic key_frame_characteristic(KEY_FRAME_CHARACTERISTIC_UUID, BLERead);
 
@@ -111,6 +111,9 @@ uint8_t vibes[3] = {0, 0, 0};
 // initialize the BNO055 and all the pins
 void initHardware() {
   // start the bno
+  pinMode(BNO_RESET, OUTPUT);
+  digitalWrite(BNO_RESET, HIGH);
+
   if (!bno.begin(OPERATION_MODE_NDOF)) {
     Serial.println("\nFailed to find BNO055 chip");
     while (1);
@@ -128,6 +131,10 @@ void initHardware() {
   digitalWrite(RED,     LOW);
   digitalWrite(GREEN,   LOW);
   digitalWrite(BLUE,    LOW);
+
+  bno.enterNormalMode();
+
+  starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
   // init motor pins
   analogWriteResolution(8);
@@ -152,6 +159,7 @@ void initBLE() {
   // Construct the service to be advertised.
   joint_service.addCharacteristic(rep_completion_characteristic);
   joint_service.addCharacteristic(pitch_diff_characteristic);
+  joint_service.addCharacteristic(reset_bno_joint_characteristic);
   //joint_service.addCharacteristic(key_frame_characteristic);
   BLE.addService(joint_service);
 
@@ -245,13 +253,12 @@ void updateBLE() {
     while (central.connected() && external.connected()) {
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
+        Serial.println("FUCK");
         if (reset_bno_joint){
+          Serial.println("Resetting Joint");
           buf[0] = true;
           reset_bno_external_characteristic.writeValue(buf[0], 1);
-          digitalWrite(BNO_RESET, LOW);
-          delayMicroseconds(1);
-          digitalWrite(BNO_RESET, HIGH);
-          delay(1000);
+          starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
         }
       }
       updateHardware();
@@ -297,7 +304,10 @@ void updateBLE() {
 
 void updateHardware() {
   joint_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  joint_vector = joint_vector - starting_vector;
   joint_pitch = joint_vector[2];
+
+
   if (DEBUG_PRINT_JOINT) {
     sprintf(print_string,
       "EuV <%f, %f, %f>",

@@ -72,6 +72,8 @@ void initBLE() {
 
   // Construct the service to be advertised
   central_service.addCharacteristic(key_frame_hit_characteristic);
+  central_service.addCharacteristic(key_frame_data_characteristic);
+  central_service.addCharacteristic(control_bits_characteristic);
   BLE.addService(central_service);
 
   // Setup central advertising
@@ -119,6 +121,7 @@ void updateState() {
     case idle_s : {
       control_bits_characteristic.readValue(&control_bits, 1);
       if (bitRead(control_bits, CTRL_CAL_START)) {
+        Serial.println("Calibrating...");
         bitWrite(control_bits, CTRL_CAL_START, 0);
         control_bits_characteristic.writeValue(control_bits);
         calibration_time = millis();
@@ -128,13 +131,14 @@ void updateState() {
     break;
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
+        Serial.println("Sending calibration data");
         // SEND RESET SIGNAL TO BNOs TO SET THEM TO <0, 0, 0>!
         buf[0] = true;
         reset_bno_joint_characteristic.writeValue(buf[0], 1);
-        digitalWrite(BNO_RESET_PIN, LOW);
-        delayMicroseconds(1);
-        digitalWrite(BNO_RESET_PIN, HIGH);
-        delay(1000); // delay for at least 800ms for BNO to restart.
+        // digitalWrite(BNO_RESET_PIN, LOW);
+        // delayMicroseconds(1);
+        // digitalWrite(BNO_RESET_PIN, HIGH);
+        // delay(1000); // delay for at least 800ms for BNO to restart.
         state = pre_exercise_s;
       }
     }

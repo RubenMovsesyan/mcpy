@@ -49,7 +49,7 @@ BLEBoolCharacteristic reset_BNO(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID, BLEWrite
 BLEDevice joint;
 
 Adafruit_BNO055 bno;
-imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector;
+imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector, starting_vector;
 float joint_pitch, external_pitch;
 bool bno_reset;
 
@@ -69,9 +69,7 @@ void initHardware() {
   Serial.println("\nBNO055 Found!");
   bno.enterNormalMode();
 
-  // init bno reset pin
-  pinMode(BNO_RESET, OUTPUT);
-  digitalWrite(BNO_RESET, HIGH);
+  starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
   bno_reset = false;
 
@@ -127,6 +125,7 @@ void setup() {
 
 void updateHardware() {
   external_euler_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  external_euler_vector = external_euler_vector - starting_vector;
   external_pitch = external_euler_vector[2];
 
   if (DEBUG_PRINT_BLE) {
@@ -204,10 +203,7 @@ void updateBLE() {
       if (reset_BNO.written()) {
         reset_BNO.readValue(&bno_reset, 1);
         if (bno_reset) {
-          digitalWrite(BNO_RESET, LOW);
-          delayMicroseconds(1);
-          digitalWrite(BNO_RESET, HIGH);
-          delay(1000);
+          starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
         }
       }
     }
