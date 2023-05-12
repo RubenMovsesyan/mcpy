@@ -29,7 +29,7 @@
 // BLE Global Variables
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
-BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
+BLEFloatCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
 BLECharacteristic pitch_diff_characteristic; // from joint device
@@ -51,10 +51,10 @@ state_t state;
 byte control_bits = 0b00000000;
 
 unsigned long calibration_time, key_time;
-double correct_pitch_diff, pitch_diff;
+float correct_pitch_diff, pitch_diff;
 
 // buffer for reading in from (peripheral) untyped characteristics
-byte buf[8] = {0};
+byte buf[4] = {0};
 
 // -------- Debug defines ---------
 
@@ -115,6 +115,7 @@ void initBLE() {
 void updateState() {
   switch (state) {
     case idle_s : {
+      control_bits_characteristic.readValue(&control_bits, 1);
       if (bitRead(control_bits, CTRL_CAL_START)) {
         bitWrite(control_bits, CTRL_CAL_START, 0);
         control_bits_characteristic.writeValue(control_bits);
@@ -139,6 +140,7 @@ void updateState() {
     case pre_exercise_s : {
       // wait to receive the first key frame.
       if (key_frame_data_characteristic.written()) {
+        key_frame_data_characteristic.readValue(&correct_pitch_diff, 4);
         key_time = millis();
         state = exercise_s;
       }
@@ -156,6 +158,7 @@ void updateState() {
     break;
     case response_s : {
       // wait to receive a new key frame.
+      control_bits_characteristic.readValue(&control_bits, 1);
       if (bitRead(control_bits, CTRL_EXER_DONE)) {
         bitWrite(control_bits, CTRL_EXER_DONE, 0);
         control_bits_characteristic.writeValue(control_bits);
