@@ -14,7 +14,7 @@
 // UUIDs for joint device
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
-#define RESET_BNO_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
+#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
 
 // ------------------------- Exercise Defines ----------------------
 #define GRACE_ANGLE_DEGREES 2
@@ -33,6 +33,7 @@ BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWr
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
 BLECharacteristic pitch_diff_characteristic; // from joint device
+BLECharacteristic reset_bno_joint_characteristic; // from joint device
 
 typedef enum state_t {
   idle_s,
@@ -125,6 +126,8 @@ void updateState() {
     case calibrate_s : {
       if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
         // SEND RESET SIGNAL TO BNOs TO SET THEM TO <0, 0, 0>!
+        buf[0] = true;
+        reset_bno_joint_characteristic.writeValue(buf[0], 1);
         digitalWrite(BNO_RESET_PIN, LOW);
         delayMicroseconds(1);
         digitalWrite(BNO_RESET_PIN, HIGH);
@@ -178,17 +181,15 @@ void updateBLE() {
     Serial.print("Connected to app MAC: ");
     Serial.println(app.address());
 
-    if (!joint.connected()) {
-      if (joint.connect()) {
-        Serial.println("Successfully connected to Joint.");
-      } else {
-        Serial.println("Failed to connect to Joint.");
-        Serial.print("Device MAC address: ");
-        Serial.println(joint.address());
-        Serial.print("Device Name: ");
-        Serial.println(joint.localName());
-        return;
-      }
+    if (joint.connect()) {
+      Serial.println("Successfully connected to Joint.");
+    } else {
+      Serial.println("Failed to connect to Joint.");
+      Serial.print("Device MAC address: ");
+      Serial.println(joint.address());
+      Serial.print("Device Name: ");
+      Serial.println(joint.localName());
+      return;
     }
 
     if (joint.discoverAttributes()) {
@@ -198,7 +199,9 @@ void updateBLE() {
       joint.disconnect();
       return;
     }
+
     pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
+    reset_bno_joint_characteristic = joint.characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID);
 
     while (app.connected() && joint.connected()) {
       updateState();
