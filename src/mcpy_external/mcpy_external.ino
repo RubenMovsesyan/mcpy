@@ -207,7 +207,7 @@ void updateBLE() {
           digitalWrite(BNO_RESET, LOW);
           delayMicroseconds(1);
           digitalWrite(BNO_RESET, HIGH);
-          delay(800);
+          delay(1000);
         }
       }
     }
