@@ -48,8 +48,10 @@ state_t state;
 
 // Control bit definitions.
 // which bit in the control_bits byte controls what :)
-#define CTRL_CAL_START 0
-#define CTRL_EXER_DONE 1
+// #define CTRL_CAL_START 0
+// #define CTRL_EXER_DONE 1
+#define CTRL_CAL_START 48
+#define CTRL_EXER_DONE 49
 byte control_bits = 0b00000000;
 
 unsigned long calibration_time, key_time;
@@ -120,9 +122,9 @@ void updateState() {
   switch (state) {
     case idle_s : {
       control_bits_characteristic.readValue(&control_bits, 1);
-      if (bitRead(control_bits, CTRL_CAL_START)) {
+      if (control_bits == CTRL_CAL_START) {
         Serial.println("Calibrating...");
-        bitWrite(control_bits, CTRL_CAL_START, 0);
+        control_bits = 0;
         control_bits_characteristic.writeValue(control_bits);
         calibration_time = millis();
         state = calibrate_s;
@@ -166,8 +168,8 @@ void updateState() {
     case response_s : {
       // wait to receive a new key frame.
       control_bits_characteristic.readValue(&control_bits, 1);
-      if (bitRead(control_bits, CTRL_EXER_DONE)) {
-        bitWrite(control_bits, CTRL_EXER_DONE, 0);
+      if (control_bits == CTRL_EXER_DONE) {
+        control_bits = 0;
         control_bits_characteristic.writeValue(control_bits);
         state = idle_s;
       } else if (key_frame_data_characteristic.written()) {
