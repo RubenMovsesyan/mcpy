@@ -41,6 +41,7 @@ BLEService externalService(EXTERNAL_SERVICE_UUID);
 BLEFloatCharacteristic joint_orientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite);
 BLEFloatCharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLEBoolCharacteristic reset_BNO(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID, BLEWrite);
+
 BLEDevice joint;
 
 Adafruit_BNO055 bno;
