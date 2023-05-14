@@ -31,11 +31,6 @@
 // Reset BNO
 #define BNO_RESET       D5
 
-// RGB LED
-#define RED             D2
-#define GREEN           D3
-#define BLUE            D4
-
 // Motors
 #define UP_MOTOR        D9
 #define DOWN_MOTOR      D8
@@ -121,18 +116,7 @@ void initHardware() {
 
   Serial.println("\nBNO055 Found!");
   bno.enterNormalMode();
-
   reset_bno_joint = false;
-
-  // init rgb pins
-  pinMode(RED,          OUTPUT);
-  pinMode(GREEN,        OUTPUT);
-  pinMode(BLUE,         OUTPUT);
-  digitalWrite(RED,     LOW);
-  digitalWrite(GREEN,   LOW);
-  digitalWrite(BLUE,    LOW);
-
-  bno.enterNormalMode();
 
   starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
@@ -253,9 +237,7 @@ void updateBLE() {
     while (central.connected() && external.connected()) {
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
-        Serial.println("FUCK");
         if (reset_bno_joint){
-          Serial.println("Resetting Joint");
           buf[0] = true;
           reset_bno_external_characteristic.writeValue(buf[0], 1);
           starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -324,45 +306,32 @@ void updateHardware() {
   vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - YAW_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
   vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - PITCH_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
 
-  digitalWrite(RED, LOW);
-  digitalWrite(GREEN, LOW);
-  digitalWrite(BLUE, LOW);
-
   if (error_vector[0] >= YAW_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Right, ");
     analogWrite(RIGHT_MOTOR, vibes[0]);
     analogWrite(LEFT_MOTOR, 0);
-    digitalWrite(RED, HIGH);
   } else if (error_vector[0] <= -YAW_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Left, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, vibes[0]);
-    digitalWrite(GREEN, HIGH);
   } else {
     if (DEBUG_PRINT_STATUS) Serial.print("Grace, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, 0);
-    digitalWrite(BLUE, HIGH);
   }
 
   if (error_vector[2] >= PITCH_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, vibes[2]);
-    digitalWrite(RED, HIGH);
-    digitalWrite(GREEN, HIGH);
   } else if (error_vector[2] <= -PITCH_GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Up, ");
     analogWrite(UP_MOTOR, vibes[2]);
     analogWrite(DOWN_MOTOR, 0);
-    digitalWrite(RED, HIGH);
-    digitalWrite(BLUE, HIGH);
   } else {
     if (DEBUG_PRINT_STATUS) Serial.print("Grace, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, 0);
-    digitalWrite(GREEN, HIGH);
-    digitalWrite(BLUE, HIGH);
   } 
 
   delay(SAMPLE_PERIOD_MS);
