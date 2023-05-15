@@ -32,9 +32,9 @@
 #define BNO_RESET       D5
 
 // Motors
-#define UP_MOTOR        D7
+#define UP_MOTOR        D9
 #define DOWN_MOTOR      D8
-#define LEFT_MOTOR      D9
+#define LEFT_MOTOR      D7
 #define RIGHT_MOTOR     D6
 
 // --------------------------- Hardware defines --------------------
