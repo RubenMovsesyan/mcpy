@@ -8,16 +8,23 @@
 
 // ===== Developer definitions =====
 #define FORCE_SERIAL 1
-#define DEBUG_PRINT_DIRECTION 0
+#define DEBUG_PRINT_DIRECTION 1
 
 // ===== Hardware definitions =====
+// FOR THE RED AND BLUE BAND
+// #define UP_MOTOR        D9
+// #define DOWN_MOTOR      D7
+// #define LEFT_MOTOR      D6
+// #define RIGHT_MOTOR     D8
+
+// FOR THE BLUE AND YELLOW BAND
 #define UP_MOTOR        D9
-#define DOWN_MOTOR      D8
-#define LEFT_MOTOR      D7
-#define RIGHT_MOTOR     D6
+#define DOWN_MOTOR      D6
+#define LEFT_MOTOR      D8
+#define RIGHT_MOTOR     D7
 
 #define MAX_LED 255
-#define BASE_LED 120
+#define BASE_LED 255
 
 // ===== Other definitions =====
 #define SAMPLE_PERIOD_MS 10
@@ -36,6 +43,17 @@ imu::Vector<3> correct_vector, error_vector, raw_vector, calibrate_vector, curr_
 uint8_t feedback[3] = {0, 0, 0};
 // feedback based on error *per axis*.
 // E.g. motor or LED intensity on the pitch, yaw, or roll axis.
+
+// Given an Euler vector with unbounded dimensions in any of the
+// yaw, pitch, roll axes, return a vector with the equivalent
+// angles within the ranges of (0 to +360, -90 to +90, -180 to +180)
+// respectively.
+imu::Vector normalizeEulerVector(imu::Vector vec) {
+  imu::Vector result;
+  // if (vec[0] > 180.0) 
+
+  return result;
+}
 
 void initSerial() {
   Serial.begin(9600);
@@ -98,6 +116,7 @@ void updateHardware() {
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, 0);
   }
+  Serial.println();
 
   delay(SAMPLE_PERIOD_MS);
 }
