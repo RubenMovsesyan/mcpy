@@ -54,13 +54,13 @@ void printVector(imu::Vector<3> &vec, bool newline = false) {
 // Raw BNO vectors are within the following ranges:
 // <0 to 360, -90 to +90, -180 to +180>
 // We want to use processed vectors in these ranges:
-// <0 to 360, N/A, -180 to +180>
+// <-180 to +180, N/A, -180 to +180>
 // NOTE: This truncates every float during int cast.
 imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   imu::Vector<3> result;
-  result[0] = ((int)vec[0] + 360) % 360;
+  result[0] = (((int)vec[0] + 360) % 360) - 0;
   result[1] = vec[1];
-  result[2] = ((int)vec[2] + 360) % 360;
+  result[2] = (((int)vec[2] + 360) % 360) - 0;
 
   return result;
 }
@@ -112,11 +112,11 @@ void updateHardware() {
   // feedback[1] = 0; // roll is currently unused.
   feedback[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - GRACE_ANGLE_DEGREES + BASE_LED, MAX_LED));
 
-  if (error_vector[0] >= GRACE_ANGLE_DEGREES) {
+  if (error_vector[0] - 180 >= GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Right, ");
     analogWrite(RIGHT_MOTOR, feedback[0]);
     analogWrite(LEFT_MOTOR, 0);
-  } else if (error_vector[0] <= -GRACE_ANGLE_DEGREES) {
+  } else if (error_vector[0] - 180 <= -GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Left, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, feedback[0]);
@@ -126,11 +126,11 @@ void updateHardware() {
     analogWrite(LEFT_MOTOR, 0);
   }
 
-  if (error_vector[2] >= GRACE_ANGLE_DEGREES) {
+  if (error_vector[2] - 180 >= GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, feedback[2]);
-  } else if (error_vector[2] <= - GRACE_ANGLE_DEGREES) {
+  } else if (error_vector[2] - 180 <= -GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Up, ");
     analogWrite(UP_MOTOR, feedback[2]);
     analogWrite(DOWN_MOTOR, 0);
