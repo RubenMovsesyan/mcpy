@@ -19,6 +19,9 @@ namespace mocopy {
 #define SAMPLE_PERIOD_MS 10
 #define GRACE_ANGLE_DEGREES 15
 
+uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
+uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
+
 void printVector(char* print_string, imu::Vector<3> &vec, bool newline = false) {
   sprintf(print_string, "vector: <%f, %f, %f>", vec[0], vec[1], vec[2]);
   Serial.print(print_string);
