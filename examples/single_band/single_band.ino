@@ -44,13 +44,32 @@ uint8_t feedback[3] = {0, 0, 0};
 // feedback based on error *per axis*.
 // E.g. motor or LED intensity on the pitch, yaw, or roll axis.
 
+void printVector(imu::Vector<3> &vec, bool newline = false) {
+  sprintf(print_string, "vector: <%f, %f, %f>", vec[0], vec[1], vec[2]);
+  Serial.print(print_string);
+  if (newline) Serial.println();
+}
+
 // Given an Euler vector with unbounded dimensions in any of the
 // yaw, pitch, roll axes, return a vector with the equivalent
-// angles within the ranges of (0 to +360, -90 to +90, -180 to +180)
-// respectively.
-imu::Vector normalizeEulerVector(imu::Vector vec) {
-  imu::Vector result;
-  // if (vec[0] > 180.0) 
+// angles within the ranges of <-180 to +180, -90 to +90, -180 to +180>
+// respectively. (BNO055 <yaw, roll, pitch> are in range of
+// <0 to +360, -90 to +90, -180 to +180> respectively so only the
+// yaw is remapped to a entirely different range.)
+// NOTE: This funciton truncates all floats :)
+imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
+  imu::Vector<3> result;
+  int roll, pitch;
+  result[0] = (int)vec[0] % 360; // get yaw within 0 to 360
+  result[0] -= 180.0; // get yaw within -180 to +180.
+  roll = (int)result[1];
+  if (roll >= 0) roll = roll % 90;
+  else roll = -1 * (abs(roll) % 90);
+  result[1] = (float)roll;
+  pitch = (int)result[2];
+  if (pitch >= 0) pitch = pitch % 180;
+  else pitch = -1 * (abs(pitch) % 180);
+  result[2] = (float)pitch;
 
   return result;
 }
@@ -81,6 +100,12 @@ void updateHardware() {
   raw_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   curr_vector = raw_vector - calibrate_vector;
   error_vector = curr_vector - correct_vector;
+  Serial.print("Raw ");
+  printVector(raw_vector, true);
+  Serial.print("Curr ");
+  printVector(curr_vector, true);
+  Serial.print("Error ");
+  printVector(error_vector, true);
   // should we normalize these vectors to be within -180 to +180, etc?
   // or does the subtraction operator already do it for us?
 
