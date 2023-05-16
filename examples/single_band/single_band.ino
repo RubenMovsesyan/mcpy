@@ -54,13 +54,13 @@ void printVector(imu::Vector<3> &vec, bool newline = false) {
 // Raw BNO vectors are within the following ranges:
 // <0 to 360, -90 to +90, -180 to +180>
 // We want to use processed vectors in these ranges:
-// <0 to 360, N/A, 0 to 360>
+// <0 to 360, N/A, -180 to +180>
 // NOTE: This truncates every float during int cast.
 imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   imu::Vector<3> result;
   result[0] = ((int)vec[0] + 360) % 360;
   result[1] = vec[1];
-  result[2] = ((( (int)vec[2] + 180) + 360) % 360) - 180;
+  result[2] = ((int)vec[2] + 360) % 360;
 
   return result;
 }
@@ -90,9 +90,12 @@ void initHardware() {
 void updateHardware() {
   raw_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   curr_vector = raw_vector - calibrate_vector;
+  curr_vector = normalizeEulerVector(curr_vector);
   error_vector = curr_vector - correct_vector;
-  // curr_vector = normalizeEulerVector(curr_vector);
+  // Don't normalize error_vector probably?
+  // It will be within <-360 to +360, N/A, -360 to +360> range so idk if that's bad or not.
   // error_vector = normalizeEulerVector(error_vector);
+
   if (DEBUG_PRINT_VECTORS) {
     Serial.print("Raw ");
     printVector(raw_vector, false);
@@ -127,7 +130,7 @@ void updateHardware() {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, feedback[2]);
-  } else if (error_vector[2] <= -GRACE_ANGLE_DEGREES) {
+  } else if (error_vector[2] <= - GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Up, ");
     analogWrite(UP_MOTOR, feedback[2]);
     analogWrite(DOWN_MOTOR, 0);
