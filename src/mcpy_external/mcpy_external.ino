@@ -44,7 +44,7 @@ BLEDevice joint;
 
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector, starting_vector;
-float joint_pitch, external_pitch, joint_yaw, external yaw, joint_roll, external_roll;
+float joint_pitch, external_pitch, joint_yaw, external_yaw, joint_roll, external_roll;
 bool bno_reset;
 
 char printString [64];
@@ -172,10 +172,13 @@ void updateBLE() {
     while (joint.connected()) {
       updateHardware();
       joint_orientation.readValue(buf, 12);
-      memcpy(&joint_yaw, buf[0], 4);
-      memcpy(&joint_roll, buf[4], 4);
-      memcpy(&joint_pitch, buf[8], 4);
-      //external_orientation.setValue();
+      memcpy(&joint_yaw, &buf[0], 4);
+      memcpy(&joint_roll, &buf[4], 4);
+      memcpy(&joint_pitch, &buf[8], 4);
+      memcpy(&buf[0], &external_euler_vector[0], 4);
+      memcpy(&buf[4], &external_euler_vector[1], 4);
+      memcpy(&buf[8], &external_euler_vector[2], 4);
+      external_orientation.setValue(buf, 12);
 
       if (reset_BNO.written()) {
         reset_BNO.readValue(&bno_reset, 1);
