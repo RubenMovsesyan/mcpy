@@ -19,21 +19,20 @@ using namespace mocopy;
 // ----- Global Variables -----
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, calibrate_vector;
-bool reset_bno_joint;
+bool reset_bno_joint, external_wiggles, joint_wiggles;
 float joint_pitch, external_pitch;
 char print_string[64];
 // buffer for sending and recieving float data over BLE
-byte buf[8] = {0};
+byte buf[12] = {0};
 
 // BLE variables
 BLEDevice central, external;
 BLEService joint_service(JOINT_SERVICE_UUID);
-BLEService external_service(EXTERNAL_SERVICE_UUID);
-BLEFloatCharacteristic rep_completion_characteristic(REP_COMPLETION_CHARACTERISTIC_UUID, BLERead | BLENotify);
 BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
 BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLERead | BLEWrite);
-BLECharacteristic reset_bno_external_characteristic;
-//BLEFloatCharacteristic key_frame_characteristic(KEY_FRAME_CHARACTERISTIC_UUID, BLERead);
+BLEBoolCharacteristic both_wiggles_characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID, BLERead);
+BLEService external_service(EXTERNAL_SERVICE_UUID); // from external
+BLECharacteristic reset_bno_external_characteristic; // from external
 
 // Hardware variables
 /*
@@ -57,10 +56,9 @@ void initBLE() {
   Serial.println("Bluetooth® Low Energy module initialized.");
 
   // Construct the service to be advertised.
-  joint_service.addCharacteristic(rep_completion_characteristic);
   joint_service.addCharacteristic(pitch_diff_characteristic);
   joint_service.addCharacteristic(reset_bno_joint_characteristic);
-  //joint_service.addCharacteristic(key_frame_characteristic);
+  joint_service.addCharacteristic(both_wiggles_characteristic);
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -130,8 +128,9 @@ void updateBLE() {
     BLECharacteristic reset_bno_external_characteristic = external.characteristic(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID);
     BLECharacteristic joint_orientation = external.characteristic(JOINT_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
+    BLECharacteristic external_wiggles_characteristic = external.characteristic(EXTERNAL_WIGGLES_CHARACTERISTIC_UUID);
 
-    if (!joint_orientation || !external_orientation) {
+    if (!external_orientation || !external_wiggles) {
       Serial.println("External device does not have the expected characteristic(s).");
       external.disconnect();
       return;
@@ -142,6 +141,10 @@ void updateBLE() {
     }
     
     while (central.connected() && external.connected()) {
+      external_wiggles_characteristic.readValue(&external_wiggles, 1);
+      if (external_wiggles && joint_wiggles) {
+        both_wiggles_characteristic.writeValue(joint_wiggles);
+      }
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
         if (reset_bno_joint){
@@ -157,12 +160,6 @@ void updateBLE() {
       memcpy(&external_pitch, buf, 4);
       float diff = fabs(joint_pitch - external_pitch);
       pitch_diff_characteristic.setValue(diff);
-
-      if (diff < 2) {
-        rep_completion_characteristic.setValue(1);
-      } else {
-        rep_completion_characteristic.setValue(0);
-      }
     }
 
     if (!central.connected()) {
@@ -224,6 +221,7 @@ void setup() {
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
   reset_bno_joint = false;
   calibrateBNO(bno, calibrate_vector);
+  joint_wiggles = true;
   initBLE();
 }
 

@@ -6,22 +6,19 @@
 
 using namespace mocopy;
 
-// --------------------------- BLE defines -------------------------
-
-// PIN Defines
-#define BNO_RESET_PIN D2
-
 // BLE Global Variables
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
-BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
+BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead | BLEWrite);
 BLECharacteristic pitch_diff_characteristic; // from joint device
 BLECharacteristic reset_bno_joint_characteristic; // from joint device
+BLECharacteristic both_wiggles_characteristic; // from joint device
 
 typedef enum state_t {
   idle_s,
+  wiggle_s,
   calibrate_s,
   pre_exercise_s,
   exercise_s,
@@ -30,22 +27,18 @@ typedef enum state_t {
 state_t state;
 
 // Control bit definitions.
-// which bit in the control_bits byte controls what :)
-// #define CTRL_CAL_START 0
-// #define CTRL_EXER_DONE 1
 #define CTRL_CAL_START 48
-#define CTRL_EXER_DONE 49
+#define CTRL_CAL_DONE 49
+#define CTRL_TAKE_SNAP 50
+#define CTRL_EXER_DONE 51
 byte control_bits = 0b00000000;
 
-unsigned long calibration_time, key_time;
+bool both_wiggles;
+unsigned long key_time;
 float correct_pitch_diff, pitch_diff;
 
 // buffer for reading in from (peripheral) untyped characteristics
-byte buf[ANGLE_SIZE_BYTES] = {0};
-
-// -------- Debug defines ---------
-
-#define DEBUG_PRINTS 1
+byte buf[ANGLE_SIZE_BYTES * 3] = {0};
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -99,8 +92,6 @@ void initBLE() {
 
 // To avoid an excessive number of states the state machine is Mealy meaning it
 // performs changes *on state transitions* and not exclusively within states.
-// TLDR: This function performs state transitions and side effects associated
-// with those state transitions but NOTHING MORE.
 void updateState() {
   switch (state) {
     case idle_s : {
@@ -109,21 +100,26 @@ void updateState() {
         Serial.println("Calibrating...");
         control_bits = 0;
         control_bits_characteristic.writeValue(control_bits);
-        calibration_time = millis();
+        state = wiggle_s;
+      }
+    }
+    break;
+    case wiggle_s : {
+      both_wiggles_characteristic.readValue(&both_wiggles, 1);
+      if (both_wiggles) { 
+        control_bits = CTRL_CAL_DONE;
+        control_bits_characteristic.writeValue(control_bits);
         state = calibrate_s;
       }
     }
     break;
     case calibrate_s : {
-      if (millis() - calibration_time >= CALIBRATION_TIME_MS) {
+      control_bits_characteristic.readValue(&control_bits, 1);
+      if (control_bits == CTRL_TAKE_SNAP) {
         Serial.println("Sending calibration data");
-        // SEND RESET SIGNAL TO BNOs TO SET THEM TO <0, 0, 0>!
         buf[0] = true;
+        // Forward the reset signal to other devices.
         reset_bno_joint_characteristic.writeValue(buf[0], 1);
-        // digitalWrite(BNO_RESET_PIN, LOW);
-        // delayMicroseconds(1);
-        // digitalWrite(BNO_RESET_PIN, HIGH);
-        // delay(1000); // delay for at least 800ms for BNO to restart.
         state = pre_exercise_s;
       }
     }
@@ -149,7 +145,7 @@ void updateState() {
     }
     break;
     case response_s : {
-      // wait to receive a new key frame.
+      // wait to receive a new key frame or exercise_done.
       control_bits_characteristic.readValue(&control_bits, 1);
       if (control_bits == CTRL_EXER_DONE) {
         control_bits = 0;
@@ -198,6 +194,7 @@ void updateBLE() {
 
     pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
     reset_bno_joint_characteristic = joint.characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID);
+    both_wiggles_characteristic = joint.characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID);
 
     while (app.connected() && joint.connected()) {
       updateState();
@@ -216,13 +213,7 @@ void updateBLE() {
 }
  
 void setup() {
-  Serial.begin(9600);
-  // while (!Serial); // only use this line if the serial monitor is needed
-  delay(2000);
-
-  pinMode(BNO_RESET_PIN, OUTPUT);
-  digitalWrite(BNO_RESET_PIN, HIGH); // Reset is active low.
-
+  initSerial();
   Serial.println("Starting Mcpy central device...");
 
   initBLE();

@@ -18,18 +18,17 @@ namespace mocopy {
 #define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
 #define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
 #define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
+#define EXTERNAL_WIGGLES_CHARACTERISTIC_UUID "95a85051-8abe-451e-9de6-6e90bdc82b43"
 // --- Joint UUIDS ---
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+#define BOTH_WIGGLES_CHARACTERISTIC_UUID "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
 // --- Central UUIDS ---
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
 #define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
 #define KEY_FRAME_DATA_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
 #define CONTROL_BITS_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
-
-// (what is this? v)
-#define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
 
 // ===== Hardware definitions =====
 #define MAX_LED 255
@@ -38,7 +37,6 @@ namespace mocopy {
 // ===== Exercise definitions =====
 #define SAMPLE_PERIOD_MS 10
 #define GRACE_ANGLE_DEGREES 15
-#define CALIBRATION_TIME_MS 5000
 #define KEY_TIMEOUT_MS 1000
 #define KF_MISS 0
 #define KF_SUCCESS 1
@@ -64,7 +62,7 @@ bool isMostlyCalibrated(Adafruit_BNO055 &bno, uint8_t *system, uint8_t *gyro, ui
   return (*gyro >= 0 && *accel >= 1 && *mag >= 2);
 }
 
-void calibrateBNO(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
+bool calibrateBNO(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   // calibration debug variables (returns 0 thru 3 to indicate how calibrated each device is).
   uint8_t system_cal, gyro_cal, accel_cal, mag_cal;
   char print_string[64];

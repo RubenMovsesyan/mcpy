@@ -19,6 +19,7 @@ BLEService externalService(EXTERNAL_SERVICE_UUID);
 BLECharacteristic joint_orientation(JOINT_ORIENTATION_CHARACTERISTIC_UUID, BLEWrite, 12);
 BLECharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify, 12);
 BLEBoolCharacteristic reset_BNO(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID, BLEWrite);
+BLEBoolCharacteristic external_wiggles_characteristic(EXTERNAL_WIGGLES_CHARACTERISTIC_UUID, BLERead);
 BLEDevice joint;
 
 Adafruit_BNO055 bno;
@@ -42,6 +43,7 @@ void initBLE() {
   externalService.addCharacteristic(joint_orientation);
   externalService.addCharacteristic(external_orientation);
   externalService.addCharacteristic(reset_BNO);
+  externalService.addCharacteristic(external_wiggles_characteristic);
   BLE.addService(externalService);
 
   // Setup peripheral advertising.
@@ -133,6 +135,7 @@ void setup() {
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
   calibrateBNO(bno, calibrate_vector);
+  external_wiggles_characteristic.writeValue(1, 1);
   bno_reset = false;
   initBLE();
 }
