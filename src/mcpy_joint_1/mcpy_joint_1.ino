@@ -183,16 +183,14 @@ void initBLE() {
   BLE.stopScan();
 }
 
-// Given an Euler vector with unbounded dimensions in any of the
-// yaw, pitch, roll axes, return a vector with the equivalent
-// angles within the ranges of <-180 to +180, -90 to +90, -180 to +180>
-// respectively. (BNO055 <yaw, roll, pitch> are in range of
-// <0 to +360, -90 to +90, -180 to +180> respectively so only the
-// yaw is remapped to a entirely different range.)
-// NOTE: This funciton truncates all floats :)
+// Raw BNO vectors are within the following ranges:
+// <0 to 360, -90 to +90, -180 to +180>
+// We want to use processed vectors in these ranges:
+// <0 to 360, N/A, 0 to 360>
+// NOTE: This truncates every float during int cast.
 imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   imu::Vector<3> result;
-  result[0] = ((int)vec[0] + 360) % 360; // get yaw within 0 to 360
+  result[0] = ((int)vec[0] + 360) % 360;
   result[1] = vec[1];
   result[2] = ((( (int)vec[2] + 180) + 360) % 360) - 180;
 

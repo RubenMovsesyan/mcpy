@@ -51,26 +51,16 @@ void printVector(imu::Vector<3> &vec, bool newline = false) {
   if (newline) Serial.println();
 }
 
-// Given an Euler vector with unbounded dimensions in any of the
-// yaw, pitch, roll axes, return a vector with the equivalent
-// angles within the ranges of <-180 to +180, -90 to +90, -180 to +180>
-// respectively. (BNO055 <yaw, roll, pitch> are in range of
-// <0 to +360, -90 to +90, -180 to +180> respectively so only the
-// yaw is remapped to a entirely different range.)
-// NOTE: This funciton truncates all floats :)
+// Raw BNO vectors are within the following ranges:
+// <0 to 360, -90 to +90, -180 to +180>
+// We want to use processed vectors in these ranges:
+// <0 to 360, N/A, 0 to 360>
+// NOTE: This truncates every float during int cast.
 imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   imu::Vector<3> result;
-  int roll, pitch;
-  result[0] = (int)vec[0] % 360; // get yaw within 0 to 360
-  // result[0] -= 180.0; // get yaw within -180 to +180.
-  roll = (int)result[1];
-  if (roll >= 0) roll = roll % 90;
-  else roll = -1 * (abs(roll) % 90);
-  result[1] = (float)roll;
-  pitch = (int)result[2];
-  if (pitch >= 0) pitch = pitch % 180;
-  else pitch = -1 * (abs(pitch) % 180);
-  result[2] = (float)pitch;
+  result[0] = ((int)vec[0] + 360) % 360;
+  result[1] = vec[1];
+  result[2] = ((( (int)vec[2] + 180) + 360) % 360) - 180;
 
   return result;
 }
