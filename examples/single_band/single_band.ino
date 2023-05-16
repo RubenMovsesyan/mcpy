@@ -8,7 +8,8 @@
 
 // ===== Developer definitions =====
 #define FORCE_SERIAL 1
-#define DEBUG_PRINT_DIRECTION 1
+#define DEBUG_PRINT_DIRECTION 0
+#define DEBUG_PRINT_VECTORS 1
 
 // ===== Hardware definitions =====
 // FOR THE RED AND BLUE BAND
@@ -61,7 +62,7 @@ imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   imu::Vector<3> result;
   int roll, pitch;
   result[0] = (int)vec[0] % 360; // get yaw within 0 to 360
-  result[0] -= 180.0; // get yaw within -180 to +180.
+  // result[0] -= 180.0; // get yaw within -180 to +180.
   roll = (int)result[1];
   if (roll >= 0) roll = roll % 90;
   else roll = -1 * (abs(roll) % 90);
@@ -100,12 +101,16 @@ void updateHardware() {
   raw_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   curr_vector = raw_vector - calibrate_vector;
   error_vector = curr_vector - correct_vector;
-  Serial.print("Raw ");
-  printVector(raw_vector, true);
-  Serial.print("Curr ");
-  printVector(curr_vector, true);
-  Serial.print("Error ");
-  printVector(error_vector, true);
+  // curr_vector = normalizeEulerVector(curr_vector);
+  // error_vector = normalizeEulerVector(error_vector);
+  if (DEBUG_PRINT_VECTORS) {
+    Serial.print("Raw ");
+    printVector(raw_vector, false);
+    Serial.print(", Curr ");
+    printVector(curr_vector, false);
+    Serial.print(", Error ");
+    printVector(error_vector, true);
+  }
   // should we normalize these vectors to be within -180 to +180, etc?
   // or does the subtraction operator already do it for us?
 
@@ -141,7 +146,7 @@ void updateHardware() {
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, 0);
   }
-  Serial.println();
+  // Serial.println();
 
   delay(SAMPLE_PERIOD_MS);
 }
