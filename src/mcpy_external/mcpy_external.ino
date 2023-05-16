@@ -29,8 +29,7 @@
 // ------ Math defines --------
 
 #define SAMPLE_PERIOD_MS 100
-#define YAW_GRACE_ANGLE_DEGREES 15
-#define PITCH_GRACE_ANGLE_DEGREES 15
+#define GRACE_ANGLE_DEGREES 15
 #define MAX_VIBRATION 255
 #define BASE_VIBRATION 120 // determined experimentally
 #define SAMPLE_PERIOD_MS 10
@@ -38,18 +37,18 @@
 // ------ Math defines --------
 
 BLEService externalService(EXTERNAL_SERVICE_UUID);
-BLEFloatCharacteristic joint_orientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite);
-BLEFloatCharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify);
+BLECharacteristic joint_orientation(JOINT_ORITENTATION_CHARACTERISTIC_UUID, BLEWrite, 12);
+BLECharacteristic external_orientation(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID, BLERead | BLENotify, 12);
 BLEBoolCharacteristic reset_BNO(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID, BLEWrite);
 BLEDevice joint;
 
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector, starting_vector;
-float joint_pitch, external_pitch;
+float joint_pitch, external_pitch, joint_yaw, external yaw, joint_roll, external_roll;
 bool bno_reset;
 
 char printString [64];
-byte buf[4] = {0};
+byte buf[12] = {0};
 
 uint8_t vibes[3] = {0, 0, 0};
 
@@ -113,6 +112,8 @@ void setup() {
 void updateHardware() {
   external_euler_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   external_euler_vector = external_euler_vector - starting_vector;
+  external_yaw = external_euler_vector[0];
+  external_roll = external_euler_vector[1];
   external_pitch = external_euler_vector[2];
 
   if (DEBUG_PRINT_BLE) {
@@ -125,14 +126,14 @@ void updateHardware() {
   error_vector = external_euler_vector - correct_vector;
 
   // Calculate the vibration strength
-  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - YAW_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
-  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - PITCH_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
+  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
+  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
 
-  if (error_vector[0] >= YAW_GRACE_ANGLE_DEGREES) {
+  if (error_vector[0] >= GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Right, ");
     analogWrite(RIGHT_MOTOR, vibes[0]);
     analogWrite(LEFT_MOTOR, 0);
-  } else if (error_vector[0] <= -YAW_GRACE_ANGLE_DEGREES) {
+  } else if (error_vector[0] <= -GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Left, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, vibes[0]);
@@ -142,11 +143,11 @@ void updateHardware() {
     analogWrite(LEFT_MOTOR, 0);
   }
 
-  if (error_vector[2] >= PITCH_GRACE_ANGLE_DEGREES) {
+  if (error_vector[2] >= GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, vibes[2]);
-  } else if (error_vector[2] <= -PITCH_GRACE_ANGLE_DEGREES) {
+  } else if (error_vector[2] <= -GRACE_ANGLE_DEGREES) {
     if (DEBUG_PRINT_STATUS) Serial.print("Up, ");
     analogWrite(UP_MOTOR, vibes[2]);
     analogWrite(DOWN_MOTOR, 0);
@@ -170,9 +171,11 @@ void updateBLE() {
 
     while (joint.connected()) {
       updateHardware();
-      joint_orientation.readValue(buf, 4);
-      memcpy(&joint_pitch, buf, 4);
-      external_orientation.setValue(external_pitch);
+      joint_orientation.readValue(buf, 12);
+      memcpy(&joint_yaw, buf[0], 4);
+      memcpy(&joint_roll, buf[4], 4);
+      memcpy(&joint_pitch, buf[8], 4);
+      //external_orientation.setValue();
 
       if (reset_BNO.written()) {
         reset_BNO.readValue(&bno_reset, 1);
