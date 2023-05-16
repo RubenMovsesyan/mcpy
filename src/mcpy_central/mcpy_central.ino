@@ -2,28 +2,11 @@
 // Scans for a accelerometer service
 
 #include <ArduinoBLE.h>
+#include <mocopy.h>
+
+using namespace mocopy;
 
 // --------------------------- BLE defines -------------------------
-
-// Local UUIDs
-#define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
-#define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
-#define KEY_FRAME_DATA_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
-#define CONTROL_BITS_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
-
-// UUIDs for joint device
-#define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
-#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
-#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
-
-// ------------------------- Exercise Defines ----------------------
-#define GRACE_ANGLE_DEGREES 2
-#define CALIBRATION_TIME_MS 5000
-#define KEY_TIMEOUT_MS 1000
-#define KF_MISS 0
-#define KF_SUCCESS 1
-
-#define ANGLE_SIZE_BYTES sizeof(float)
 
 // PIN Defines
 #define BNO_RESET_PIN D2

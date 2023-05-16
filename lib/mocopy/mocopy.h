@@ -23,6 +23,10 @@ namespace mocopy {
 #define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
 #define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 // --- Central UUIDS ---
+#define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
+#define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
+#define KEY_FRAME_DATA_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
+#define CONTROL_BITS_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
 
 // (what is this? v)
 #define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
@@ -31,9 +35,16 @@ namespace mocopy {
 #define MAX_LED 255
 #define BASE_LED 20
 
-// ===== Other definitions =====
+// ===== Exercise definitions =====
 #define SAMPLE_PERIOD_MS 10
 #define GRACE_ANGLE_DEGREES 15
+#define CALIBRATION_TIME_MS 5000
+#define KEY_TIMEOUT_MS 1000
+#define KF_MISS 0
+#define KF_SUCCESS 1
+
+// ===== Other definitions =====
+#define ANGLE_SIZE_BYTES sizeof(float)
 
 uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
 uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
