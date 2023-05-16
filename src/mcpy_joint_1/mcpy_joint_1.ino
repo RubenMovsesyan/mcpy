@@ -8,25 +8,6 @@
 
 using namespace mocopy;
 
-// --------------------------- BLE defines -------------------------
-
-#define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
-#define EXTERNAL_SERVICE_UUID "56176a63-d563-43f4-b239-636f41b63c6d"
-
-// Characteristic UUIDs
-// local uuids
-#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
-#define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
-//#define KEY_FRAME_CHARACTERISTIC_UUID "5f9652ee-feef-42ef-b296-281b01a9a450"
-
-// external uuids
-#define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
-#define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
-#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
-#define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
-
-// --------------------------- BLE defines -------------------------
-
 // --------------------------- Hardware defines --------------------
 
 // Motors for joint device

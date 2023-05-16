@@ -12,6 +12,22 @@ namespace mocopy {
 #define DEBUG_PRINT_VECTORS 1
 #define DEBUG_PRINT_CALIBRATION 1
 
+// ===== UUID definitions =====
+// --- External UUIDs ---
+#define EXTERNAL_SERVICE_UUID "56176a63-d563-43f4-b239-636f41b63c6d"
+#define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
+#define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
+#define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
+// --- Joint UUIDS ---
+#define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
+#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
+#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+// --- Central UUIDS ---
+
+// (what is this? v)
+#define REP_COMPLETION_CHARACTERISTIC_UUID "08d54caf-75bc-4aa6-876b-8eea5427605a"
+
+// ===== Hardware definitions =====
 #define MAX_LED 255
 #define BASE_LED 20
 
