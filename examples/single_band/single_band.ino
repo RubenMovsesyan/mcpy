@@ -29,21 +29,6 @@ uint8_t feedback[3] = {0, 0, 0};
 // feedback based on error *per axis*.
 // E.g. motor or LED intensity on the pitch, yaw, or roll axis.
 
-void initHardware() {
-  if (!bno.begin(OPERATION_MODE_NDOF)) {
-    Serial.println("\nFailed to find BNO055 chip");
-    while (1);
-  }
-  Serial.println("\nBNO055 Found!");
-  bno.enterNormalMode();
-
-  analogWriteResolution(8);
-  pinMode(UP_MOTOR,     OUTPUT);
-  pinMode(DOWN_MOTOR,   OUTPUT);
-  pinMode(LEFT_MOTOR,   OUTPUT);
-  pinMode(DOWN_MOTOR,  OUTPUT);
-}
-
 void updateHardware() {
   raw_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   curr_vector = raw_vector - calibrate_vector;
@@ -101,7 +86,7 @@ void setup() {
   // This is a POST-PROCESS vector! <0, 0, 0> means curr_vector == calibrate_vector!
   correct_vector = {0, 0, 0};
   initSerial();
-  initHardware();
+  initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
   calibrateBNO(bno, calibrate_vector);
 }
 

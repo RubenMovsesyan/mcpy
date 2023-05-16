@@ -1,11 +1,12 @@
 // MoCopy joint device (between external and central).
 // Install the ArduinoBLE library from the library manager in the IDE.
 
-#include <string>
-#include <math.h>
 #include <ArduinoBLE.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
+#include <mocopy.h>
+
+using namespace mocopy;
 
 // --------------------------- BLE defines -------------------------
 
@@ -28,54 +29,18 @@
 
 // --------------------------- Hardware defines --------------------
 
-// Reset BNO
-#define BNO_RESET       D5
-
 // Motors for joint device
 #define UP_MOTOR        D9
 #define DOWN_MOTOR      D8
 #define LEFT_MOTOR      D7
 #define RIGHT_MOTOR     D6
 
-// --------------------------- Hardware defines --------------------
-
-// ------ Math defines --------
-
-#define SAMPLE_PERIOD_MS 100
-#define YAW_GRACE_ANGLE_DEGREES 15
-#define PITCH_GRACE_ANGLE_DEGREES 15
-#define MAX_VIBRATION 255
-#define BASE_VIBRATION 120 // determined experimentally
-#define SAMPLE_PERIOD_MS 10
-
-// ------ Math defines --------
-
-// ------ Other defines -------
-
-#define STR_SIZE 64
-
-// debug defines
-#define DEBUG_PRINT_JOINT 0
-#define DEBUG_PRINT_BLE 1
-#define DEBUG_PRINT_STATUS 0
-
-// ------ Other defines -------
-bool reset_bno_joint;
-// ---- Hardware functions ----
-
-uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
-uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
-
-// ---- Hardware functions ----
-
-
 // ----- Global Variables -----
-
 Adafruit_BNO055 bno;
-imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, starting_vector;
-
+imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, calibrate_vector;
+bool reset_bno_joint;
 float joint_pitch, external_pitch;
-char print_string[STR_SIZE];
+char print_string[64];
 // buffer for sending and recieving float data over BLE
 byte buf[8] = {0};
 
@@ -102,36 +67,6 @@ BLECharacteristic reset_bno_external_characteristic;
 uint8_t vibes[3] = {0, 0, 0};
 
 // ----- Global Variables -----
-
-// initialize the BNO055 and all the pins
-void initHardware() {
-  // start the bno
-  pinMode(BNO_RESET, OUTPUT);
-  digitalWrite(BNO_RESET, HIGH);
-
-  if (!bno.begin(OPERATION_MODE_NDOF)) {
-    Serial.println("\nFailed to find BNO055 chip");
-    while (1);
-  }
-
-  Serial.println("\nBNO055 Found!");
-  bno.enterNormalMode();
-  reset_bno_joint = false;
-
-  starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-
-  // init motor pins
-  analogWriteResolution(8);
-  pinMode(UP_MOTOR,     OUTPUT);
-  pinMode(DOWN_MOTOR,   OUTPUT);
-  pinMode(LEFT_MOTOR,   OUTPUT);
-  pinMode(RIGHT_MOTOR,  OUTPUT);
-
-  Serial.println("Mcpy hardware initialized");
-
-  correct_vector = {0, 0, 0};
-}
-
 // initialize the BLE
 void initBLE() {
   if (!BLE.begin()) {
@@ -183,29 +118,6 @@ void initBLE() {
   BLE.stopScan();
 }
 
-// Raw BNO vectors are within the following ranges:
-// <0 to 360, -90 to +90, -180 to +180>
-// We want to use processed vectors in these ranges:
-// <-180 to +180, N/A, -180 to +180>
-// NOTE: This truncates every float during int cast.
-imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
-  imu::Vector<3> result;
-  result[0] = (((int)vec[0] + 360) % 360) - 180;
-  result[1] = vec[1];
-  result[2] = (((int)vec[2] + 360) % 360) - 180;
-
-  return result;
-}
-
-void setup() {
-  Serial.begin(9600);
-  delay(2000); // wait for Serial
-  Serial.println("Starting Mcpy joint...");
-
-  initHardware();
-  initBLE();
-}
-
 void updateBLE() {
   central = BLE.central();
 
@@ -254,7 +166,7 @@ void updateBLE() {
         if (reset_bno_joint){
           buf[0] = true;
           reset_bno_external_characteristic.writeValue(buf[0], 1);
-          starting_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+          calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
         }
       }
       updateHardware();
@@ -262,22 +174,13 @@ void updateBLE() {
       joint_orientation.setValue(buf, 4);
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
-      
       float diff = fabs(joint_pitch - external_pitch);
-    
       pitch_diff_characteristic.setValue(diff);
 
       if (diff < 2) {
         rep_completion_characteristic.setValue(1);
       } else {
         rep_completion_characteristic.setValue(0);
-      }
-
-      if (DEBUG_PRINT_BLE) {
-        Serial.print("Joint pitch: ");
-        Serial.print(joint_pitch);
-        Serial.print(" External pitch: ");
-        Serial.println(external_pitch);
       }
     }
 
@@ -295,55 +198,52 @@ void updateBLE() {
 
 void updateHardware() {
   joint_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  joint_vector = joint_vector - starting_vector;
+  joint_vector = joint_vector - calibrate_vector;
   joint_pitch = joint_vector[2];
-
-
-  if (DEBUG_PRINT_JOINT) {
-    sprintf(print_string,
-      "EuV <%f, %f, %f>",
-      joint_vector[0],
-      joint_vector[1],
-      joint_vector[2]
-    );
-    Serial.println(print_string);
-  }
-
   error_vector = joint_vector - correct_vector;
 
   // Calculate the vibration strength
-  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - YAW_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
-  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - PITCH_GRACE_ANGLE_DEGREES + BASE_VIBRATION, MAX_VIBRATION));
+  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - GRACE_ANGLE_DEGREES + BASE_LED, MAX_LED));
+  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - GRACE_ANGLE_DEGREES + BASE_LED, MAX_LED));
 
-  if (error_vector[0] >= YAW_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Right, ");
+  if (error_vector[0] >= GRACE_ANGLE_DEGREES) {
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Right, ");
     analogWrite(RIGHT_MOTOR, vibes[0]);
     analogWrite(LEFT_MOTOR, 0);
-  } else if (error_vector[0] <= -YAW_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Left, ");
+  } else if (error_vector[0] <= -GRACE_ANGLE_DEGREES) {
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Left, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, vibes[0]);
   } else {
-    if (DEBUG_PRINT_STATUS) Serial.print("Grace, ");
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Grace, ");
     analogWrite(RIGHT_MOTOR, 0);
     analogWrite(LEFT_MOTOR, 0);
   }
 
-  if (error_vector[2] >= PITCH_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Down, ");
+  if (error_vector[2] >= GRACE_ANGLE_DEGREES) {
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Down, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, vibes[2]);
-  } else if (error_vector[2] <= -PITCH_GRACE_ANGLE_DEGREES) {
-    if (DEBUG_PRINT_STATUS) Serial.print("Up, ");
+  } else if (error_vector[2] <= -GRACE_ANGLE_DEGREES) {
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Up, ");
     analogWrite(UP_MOTOR, vibes[2]);
     analogWrite(DOWN_MOTOR, 0);
   } else {
-    if (DEBUG_PRINT_STATUS) Serial.print("Grace, ");
+    if (DEBUG_PRINT_DIRECTION) Serial.print("Grace, ");
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, 0);
   } 
 
   delay(SAMPLE_PERIOD_MS);
+}
+
+void setup() {
+  correct_vector = {0, 0, 0};
+  initSerial();
+  initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
+  reset_bno_joint = false;
+  calibrateBNO(bno, calibrate_vector);
+  initBLE();
 }
 
 void loop() {

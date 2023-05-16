@@ -13,7 +13,7 @@ namespace mocopy {
 #define DEBUG_PRINT_CALIBRATION 1
 
 #define MAX_LED 255
-#define BASE_LED 255
+#define BASE_LED 20
 
 // ===== Other definitions =====
 #define SAMPLE_PERIOD_MS 10
@@ -62,6 +62,21 @@ imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   result[2] = (((int)vec[2] + 360) % 360) - 180;
 
   return result;
+}
+
+void initHardware(Adafruit_BNO055 &bno, int up, int down, int left, int right) {
+  if (!bno.begin(OPERATION_MODE_NDOF)) {
+    Serial.println("\nFailed to find BNO055 chip");
+    while (1);
+  }
+  Serial.println("\nBNO055 Found!");
+  bno.enterNormalMode();
+
+  analogWriteResolution(8);
+  pinMode(up,     OUTPUT);
+  pinMode(down,   OUTPUT);
+  pinMode(left,   OUTPUT);
+  pinMode(right,  OUTPUT);
 }
 
 void initSerial() {
