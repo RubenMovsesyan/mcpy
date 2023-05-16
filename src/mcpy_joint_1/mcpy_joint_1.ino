@@ -183,6 +183,22 @@ void initBLE() {
   BLE.stopScan();
 }
 
+// Given an Euler vector with unbounded dimensions in any of the
+// yaw, pitch, roll axes, return a vector with the equivalent
+// angles within the ranges of <-180 to +180, -90 to +90, -180 to +180>
+// respectively. (BNO055 <yaw, roll, pitch> are in range of
+// <0 to +360, -90 to +90, -180 to +180> respectively so only the
+// yaw is remapped to a entirely different range.)
+// NOTE: This funciton truncates all floats :)
+imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
+  imu::Vector<3> result;
+  result[0] = ((int)vec[0] + 360) % 360; // get yaw within 0 to 360
+  result[1] = vec[1];
+  result[2] = ((( (int)vec[2] + 180) + 360) % 360) - 180;
+
+  return result;
+}
+
 void setup() {
   Serial.begin(9600);
   delay(2000); // wait for Serial
@@ -250,12 +266,7 @@ void updateBLE() {
       memcpy(&external_pitch, buf, 4);
       
       float diff = fabs(joint_pitch - external_pitch);
-
-//      if (diff < 2) {
-//        rep_completion_characteristic.setValue(1);
-//      } else {
-//        rep_completion_characteristic.setValue(0);
-//      }    
+    
       pitch_diff_characteristic.setValue(diff);
 
       if (diff < 2) {
