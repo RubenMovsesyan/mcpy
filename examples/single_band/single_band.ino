@@ -5,28 +5,15 @@
 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
-#include "mocopy.h"
+#include <mocopy.h>
 
 using namespace mocopy;
-
-// ===== Developer definitions =====
-#define FORCE_SERIAL 1
-#define DEBUG_PRINT_DIRECTION 0
-#define DEBUG_PRINT_VECTORS 1
-#define DEBUG_PRINT_CALIBRATION 1
-
-#define MAX_LED 255
-#define BASE_LED 255
 
 // For the blue and yellow band.
 #define UP_MOTOR        D9
 #define DOWN_MOTOR      D6
 #define LEFT_MOTOR      D8
 #define RIGHT_MOTOR     D7
-
-// ===== Other definitions =====
-#define SAMPLE_PERIOD_MS 10
-#define GRACE_ANGLE_DEGREES 15
 
 //  ===== Global variables =====
 char print_string[64];

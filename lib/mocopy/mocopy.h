@@ -1,6 +1,9 @@
 #ifndef MOCOPY_H
 #define MOCOPY_H
 
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+
 namespace mocopy {
 
 // ===== Developer definitions =====
