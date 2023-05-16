@@ -31,7 +31,7 @@
 // Reset BNO
 #define BNO_RESET       D5
 
-// Motors
+// Motors for joint device
 #define UP_MOTOR        D9
 #define DOWN_MOTOR      D8
 #define LEFT_MOTOR      D7
