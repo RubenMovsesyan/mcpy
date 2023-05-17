@@ -22,7 +22,7 @@ namespace mocopy {
 // --- Joint UUIDS ---
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
-#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+#define ORIENTATION_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 #define BOTH_WIGGLES_CHARACTERISTIC_UUID "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
 // --- Central UUIDS ---
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"

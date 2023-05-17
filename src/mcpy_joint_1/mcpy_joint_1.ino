@@ -28,7 +28,7 @@ byte buf[12] = {0};
 // BLE variables
 BLEDevice central, external;
 BLEService joint_service(JOINT_SERVICE_UUID);
-BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID, BLERead);
+BLECharacteristic orientation_diff_characteristic(ORIENTATION_DIFF_CHARACTERISTIC_UUID, BLERead, 12);
 BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLERead | BLEWrite);
 BLEBoolCharacteristic both_wiggles_characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID, BLERead);
 BLEService external_service(EXTERNAL_SERVICE_UUID); // from external
@@ -56,7 +56,7 @@ void initBLE() {
   Serial.println("Bluetooth® Low Energy module initialized.");
 
   // Construct the service to be advertised.
-  joint_service.addCharacteristic(pitch_diff_characteristic);
+  joint_service.addCharacteristic(orientation_diff_characteristic);
   joint_service.addCharacteristic(reset_bno_joint_characteristic);
   joint_service.addCharacteristic(both_wiggles_characteristic);
   BLE.addService(joint_service);
@@ -159,7 +159,7 @@ void updateBLE() {
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
       float diff = fabs(joint_pitch - external_pitch);
-      pitch_diff_characteristic.setValue(diff);
+      orientation_diff_characteristic.setValue(diff);
     }
 
     if (!central.connected()) {
