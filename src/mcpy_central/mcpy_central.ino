@@ -9,13 +9,13 @@ using namespace mocopy;
 // BLE Global Variables
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
-BLEFloatCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
+BLECharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite, 24);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify | BLERead);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead | BLEWrite);
-BLECharacteristic pitch_diff_characteristic; // from joint device
+BLECharacteristic orientation_diff_characteristic; // from joint device
 BLECharacteristic reset_bno_joint_characteristic; // from joint device
 BLECharacteristic both_wiggles_characteristic; // from joint device
-
+BLECharacteristic joint_key_frame_data_characteristic;
 typedef enum state_t {
   idle_s,
   wiggle_s,
@@ -35,10 +35,12 @@ byte control_bits = 0b00000000;
 
 bool both_wiggles;
 unsigned long key_time;
-float correct_pitch_diff, pitch_diff;
+float joint_yaw, joint_roll, joint_pitch, correct_yaw_diff, correct_roll_diff, correct_pitch_diff, yaw_diff, roll_diff, pitch_diff;
+//joint_euler and correct_euler_diff is from device to save to buf
+//euler_diff is from joint
 
 // buffer for reading in from (peripheral) untyped characteristics
-byte buf[ANGLE_SIZE_BYTES * 3] = {0};
+byte buf[24] = {0};
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -127,14 +129,24 @@ void updateState() {
     case pre_exercise_s : {
       // wait to receive the first key frame.
       if (key_frame_data_characteristic.written()) {
-        key_frame_data_characteristic.readValue(&correct_pitch_diff, ANGLE_SIZE_BYTES);
+        key_frame_data_characteristic.readValue(buf, 24);
+        joint_key_frame_data_characteristic.writeValue(buf, 24);
+        memcpy(&joint_yaw, &buf[0], 4);
+        memcpy(&joint_roll, &buf[4], 4);
+        memcpy(&joint_pitch, &buf[8], 4);
+        memcpy(&correct_yaw_diff, &buf[12], 4);
+        memcpy(&correct_roll_diff, &buf[16], 4);
+        memcpy(&correct_pitch_diff, &buf[20], 4);
         key_time = millis();
         state = exercise_s;
       }
     }
     break;
     case exercise_s : {
-      pitch_diff_characteristic.readValue(&pitch_diff, ANGLE_SIZE_BYTES);
+      orientation_diff_characteristic.readValue(buf, 12);
+      memcpy(&yaw_diff, &buf[0], 4);
+      memcpy(&roll_diff, &buf[4], 4);
+      memcpy(&pitch_diff, &buf[8], 4);
       if (keyFrameHit()) {
         key_frame_hit_characteristic.writeValue(KF_SUCCESS);
         state = response_s;
@@ -152,7 +164,14 @@ void updateState() {
         control_bits_characteristic.writeValue(control_bits);
         state = idle_s;
       } else if (key_frame_data_characteristic.written()) {
-        key_frame_data_characteristic.readValue(&correct_pitch_diff, ANGLE_SIZE_BYTES);
+        key_frame_data_characteristic.readValue(buf, 24);
+        joint_key_frame_data_characteristic.writeValue(buf, 24);
+        memcpy(&joint_yaw, &buf[0], 4);
+        memcpy(&joint_roll, &buf[4], 4);
+        memcpy(&joint_pitch, &buf[8], 4);
+        memcpy(&correct_yaw_diff, &buf[12], 4);
+        memcpy(&correct_roll_diff, &buf[16], 4);
+        memcpy(&correct_pitch_diff, &buf[20], 4);
         key_time = millis();
         state = exercise_s;
       }
@@ -163,7 +182,7 @@ void updateState() {
 }
 
 bool keyFrameHit() {
-  return fabs(pitch_diff - correct_pitch_diff) <= GRACE_ANGLE_DEGREES;
+  return ((fabs(pitch_diff - correct_pitch_diff) <= GRACE_ANGLE_DEGREES) && (fabs(yaw_diff - correct_yaw_diff) <= GRACE_ANGLE_DEGREES));
 }
 
 void updateBLE() {
@@ -192,10 +211,10 @@ void updateBLE() {
       return;
     }
 
-    pitch_diff_characteristic = joint.characteristic(PITCH_DIFF_CHARACTERISTIC_UUID);
+    orientation_diff_characteristic = joint.characteristic(ORIENTATION_DIFF_CHARACTERISTIC_UUID);
     reset_bno_joint_characteristic = joint.characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID);
     both_wiggles_characteristic = joint.characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID);
-
+    joint_key_frame_data_characteristic = joint.characteristic(JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID);
     while (app.connected() && joint.connected()) {
       updateState();
     }

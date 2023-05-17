@@ -19,10 +19,12 @@ namespace mocopy {
 #define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
 #define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
 #define EXTERNAL_WIGGLES_CHARACTERISTIC_UUID "95a85051-8abe-451e-9de6-6e90bdc82b43"
+#define EXTERNAL_KEY_FRAME_DATA_CHARACTERISTIC_UUID "3f7507f6-fff0-47dc-a9e3-ffffea9331bf"
+#define JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID "43375973-2965-41f3-bbdd-cb413f4083f4"
 // --- Joint UUIDS ---
 #define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
 #define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
-#define PITCH_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+#define ORIENTATION_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 #define BOTH_WIGGLES_CHARACTERISTIC_UUID "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
 // --- Central UUIDS ---
 #define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
@@ -62,15 +64,16 @@ bool isMostlyCalibrated(Adafruit_BNO055 &bno, uint8_t *system, uint8_t *gyro, ui
   return (*gyro >= 0 && *accel >= 1 && *mag >= 2);
 }
 
-bool calibrateBNO(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
+bool calibrateBNO(Adafruit_BNO055 &bno) {
   // calibration debug variables (returns 0 thru 3 to indicate how calibrated each device is).
   uint8_t system_cal, gyro_cal, accel_cal, mag_cal;
   char print_string[64];
+  return isMostlyCalibrated(bno, &system_cal, &gyro_cal, &accel_cal, &mag_cal, print_string);
+}
 
-  Serial.println("Calibrating BNO055, please wiggle your arms (no I'm not kidding).");
-  while (!isMostlyCalibrated(bno, &system_cal, &gyro_cal, &accel_cal, &mag_cal, print_string));
+void takeSnapshot(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   Serial.println("Capturing reference position in 5 seconds...");
-  delay(5000);
+  
   calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   Serial.println("Calibrated.");
 }
