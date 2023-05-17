@@ -180,6 +180,17 @@ void updateHardware() {
   joint_pitch = joint_vector[2];
   error_vector = joint_vector - correct_vector;
 
+  if (DEBUG_PRINT_VECTORS) {
+    char vector_str[128];
+    sprintf(vector_str, "eV: <%f, %f, %f>", 
+      error_vector[0],
+      error_vector[1],
+      error_vector[2]
+    );
+
+    Serial.println(vector_str);
+  }
+
   // Calculate the vibration strength
   vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - GRACE_ANGLE_DEGREES + BASE_LED, MAX_LED));
   vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - GRACE_ANGLE_DEGREES + BASE_LED, MAX_LED));
