@@ -19,8 +19,13 @@ using namespace mocopy;
 // ----- Global Variables -----
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, calibrate_vector;
+imu::Vector<3> correct_kf_vector, correct_joint_vector, actual_diff_vector, actual_external_vector;
 bool reset_bno_joint, external_wiggles, joint_wiggles;
 float joint_pitch, external_pitch;
+
+float correct_joint_pitch, correct_joint_yaw, correct_joint_roll;
+float correct_kf_pitch, correct_kf_yaw, correct_kf_roll;
+
 char print_string[64];
 // buffer for sending and recieving float data over BLE
 byte buf[12] = {0};
@@ -32,6 +37,7 @@ BLEFloatCharacteristic pitch_diff_characteristic(PITCH_DIFF_CHARACTERISTIC_UUID,
 BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLERead | BLEWrite);
 BLEBoolCharacteristic both_wiggles_characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID, BLERead);
 BLEService external_service(EXTERNAL_SERVICE_UUID); // from external
+BLECharacteristic key_frame_data_characteristic(JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID, BLEWrite, 24);
 BLECharacteristic reset_bno_external_characteristic; // from external
 
 // Hardware variables
@@ -59,6 +65,7 @@ void initBLE() {
   joint_service.addCharacteristic(pitch_diff_characteristic);
   joint_service.addCharacteristic(reset_bno_joint_characteristic);
   joint_service.addCharacteristic(both_wiggles_characteristic);
+  joint_service.addCharacteristic(key_frame_data_characteristic);
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -156,7 +163,32 @@ void updateBLE() {
       updateHardware();
       memcpy(buf, &joint_pitch, 4);
       joint_orientation.setValue(buf, 4);
-      external_orientation.readValue(buf, 4);
+      external_orientation.readValue(buf, 12);
+      memcpy(&actual_external_vector[0], &buf[0], 4);
+      memcpy(&actual_external_vector[1], &buf[4], 4);
+      memcpy(&actual_external_vector[2], &buf[8], 4);
+
+
+      key_frame_data_characteristic.readValue(buf, 24);
+      // taking the data from the key frame buffer into device for parsing
+      memcpy(&correct_joint_yaw, &buf[0], 4);
+      memcpy(&correct_joint_roll, &buf[4], 4);
+      memcpy(&correct_joint_pitch, &buf[8], 4);
+      memcpy(&correct_kf_yaw, &buf[12], 4);
+      memcpy(&correct_kf_roll, &buf[16], 4);
+      memcpy(&correct_kf_pitch, &buf[20], 4);
+
+      // moving all the key frame data into vectors for ez math
+      correct_joint_vector[0] = correct_joint_yaw;
+      correct_joint_vector[1] = correct_joint_roll;
+      correct_joint_vector[2] = correct_joint_pitch;
+
+      correct_kf_vector[0] = correct_kf_yaw;
+      correct_kf_vector[1] = correct_kf_roll;
+      correct_kf_vector[2] = correct_kf_pitch;
+
+      actual_diff_vector = actual_external_vector - joint_vector;
+
       memcpy(&external_pitch, buf, 4);
       float diff = fabs(joint_pitch - external_pitch);
       pitch_diff_characteristic.setValue(diff);
@@ -178,7 +210,7 @@ void updateHardware() {
   joint_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   joint_vector = joint_vector - calibrate_vector;
   joint_pitch = joint_vector[2];
-  error_vector = joint_vector - correct_vector;
+  error_vector = joint_vector - correct_joint_vector;
 
   if (DEBUG_PRINT_VECTORS) {
     char vector_str[128];
