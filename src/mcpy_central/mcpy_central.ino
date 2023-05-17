@@ -15,7 +15,7 @@ BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead | B
 BLECharacteristic orientation_diff_characteristic; // from joint device
 BLECharacteristic reset_bno_joint_characteristic; // from joint device
 BLECharacteristic both_wiggles_characteristic; // from joint device
-
+BLECharacteristic joint_key_frame_data_characteristic;
 typedef enum state_t {
   idle_s,
   wiggle_s,
@@ -130,6 +130,7 @@ void updateState() {
       // wait to receive the first key frame.
       if (key_frame_data_characteristic.written()) {
         key_frame_data_characteristic.readValue(buf, 24);
+        joint_key_frame_data_characteristic.writeValue(buf, 24);
         memcpy(&joint_yaw, &buf[0], 4);
         memcpy(&joint_roll, &buf[4], 4);
         memcpy(&joint_pitch, &buf[8], 4);
@@ -164,6 +165,7 @@ void updateState() {
         state = idle_s;
       } else if (key_frame_data_characteristic.written()) {
         key_frame_data_characteristic.readValue(buf, 24);
+        joint_key_frame_data_characteristic.writeValue(buf, 24);
         memcpy(&joint_yaw, &buf[0], 4);
         memcpy(&joint_roll, &buf[4], 4);
         memcpy(&joint_pitch, &buf[8], 4);
@@ -212,7 +214,7 @@ void updateBLE() {
     orientation_diff_characteristic = joint.characteristic(ORIENTATION_DIFF_CHARACTERISTIC_UUID);
     reset_bno_joint_characteristic = joint.characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID);
     both_wiggles_characteristic = joint.characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID);
-
+    joint_key_frame_data_characteristic = joint.characteristic(JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID);
     while (app.connected() && joint.connected()) {
       updateState();
     }
