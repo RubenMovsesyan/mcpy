@@ -25,8 +25,7 @@ BLEDevice joint;
 Adafruit_BNO055 bno;
 imu::Vector<3> joint_euler_vector, external_euler_vector, correct_vector, error_vector, calibrate_vector;
 float joint_pitch, external_pitch, joint_yaw, external_yaw, joint_roll, external_roll;
-bool bno_reset;
-
+bool bno_reset, external_wiggles;
 char printString [64];
 byte buf[12] = {0};
 
@@ -135,7 +134,7 @@ void setup() {
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
   calibrateBNO(bno, calibrate_vector);
-  external_wiggles_characteristic.writeValue(1, 1);
+  external_wiggles_characteristic.writeValue(true);
   bno_reset = false;
   initBLE();
 }
