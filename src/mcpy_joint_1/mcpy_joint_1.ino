@@ -134,16 +134,24 @@ void updateBLE() {
       Serial.println("External device does not have the expected characteristic(s).");
       external.disconnect();
       return;
-    } else if (!external_orientation.canSubscribe()) { // joint_orientation is BLEWrite threfore can't subscribe.
+    } else if (!external_orientation.canSubscribe()) {
       Serial.println("Cannot subscribe to the External device's characteristic(s).");
       external.disconnect();
       return;
     }
     
     while (central.connected() && external.connected()) {
+      if (!joint_wiggles) {
+        // Only set joint_wiggles once.
+        joint_wiggles = calibrateBNO(bno, calibrate_vector);
+      }
       external_wiggles_characteristic.readValue(&external_wiggles, 1);
       if (external_wiggles && joint_wiggles) {
         both_wiggles_characteristic.writeValue(joint_wiggles);
+      } else {
+        Serial.println("Capturing reference position in 5 seconds...");
+        calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+        Serial.println("Calibrated.");
       }
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
@@ -220,8 +228,6 @@ void setup() {
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
   reset_bno_joint = false;
-  calibrateBNO(bno, calibrate_vector);
-  joint_wiggles = true;
   initBLE();
 }
 

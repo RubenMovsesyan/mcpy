@@ -62,15 +62,16 @@ bool isMostlyCalibrated(Adafruit_BNO055 &bno, uint8_t *system, uint8_t *gyro, ui
   return (*gyro >= 0 && *accel >= 1 && *mag >= 2);
 }
 
-bool calibrateBNO(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
+void calibrateBNO(Adafruit_BNO055 &bno) {
   // calibration debug variables (returns 0 thru 3 to indicate how calibrated each device is).
   uint8_t system_cal, gyro_cal, accel_cal, mag_cal;
   char print_string[64];
-
-  Serial.println("Calibrating BNO055, please wiggle your arms (no I'm not kidding).");
   while (!isMostlyCalibrated(bno, &system_cal, &gyro_cal, &accel_cal, &mag_cal, print_string));
+}
+
+void takeSnapshot(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   Serial.println("Capturing reference position in 5 seconds...");
-  delay(5000);
+  
   calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   Serial.println("Calibrated.");
 }
