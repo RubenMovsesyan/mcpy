@@ -130,7 +130,7 @@ void updateBLE() {
     BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_wiggles_characteristic = external.characteristic(EXTERNAL_WIGGLES_CHARACTERISTIC_UUID);
 
-    if (!external_orientation || !external_wiggles) {
+    if (!external_orientation || !external_wiggles_characteristic) {
       Serial.println("External device does not have the expected characteristic(s).");
       external.disconnect();
       return;
