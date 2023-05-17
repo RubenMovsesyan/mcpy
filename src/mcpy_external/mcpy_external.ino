@@ -171,14 +171,15 @@ void updateBLE() {
 void setup() {
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
-  calibrateBNO(bno);
-  external_wiggles_characteristic.writeValue(true);
   bno_reset = false;
   correct_external_vector = {0, 0, 0};
   initBLE();
 }
 
 void loop() {
-
+  if (!external_wiggles) {
+    external_wiggles = calibrateBNO(bno);
+    external_wiggles_characteristic.setValue(true);
+  }
   updateBLE();
 }
