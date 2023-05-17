@@ -21,7 +21,7 @@ Adafruit_BNO055 bno;
 imu::Vector<3> joint_vector, external_vector, error_vector, correct_vector, calibrate_vector;
 imu::Vector<3> correct_kf_vector, correct_joint_vector, actual_diff_vector, actual_external_vector;
 bool reset_bno_joint, external_wiggles, joint_wiggles;
-float joint_pitch, external_pitch;
+float joint_pitch, external_pitch, joint_yaw, external_yaw, joint_roll, external_roll;
 
 float correct_joint_pitch, correct_joint_yaw, correct_joint_roll;
 float correct_kf_pitch, correct_kf_yaw, correct_kf_roll;
@@ -167,7 +167,7 @@ void updateBLE() {
         }
       }
       updateHardware();
-      memcpy(buf, &joint_pitch, 4);
+      //memcpy(buf, &joint_pitch, 4);
       // joint_orientation.setValue(buf, 4);
       external_orientation.readValue(buf, 12);
       memcpy(&actual_external_vector[0], &buf[0], 4);
@@ -197,10 +197,17 @@ void updateBLE() {
 
       external_key_frame_data_characteristic.setValue(buf, 24);
       // joint_orientation.setValue(buf, 4);
-      external_orientation.readValue(buf, 4);
-      memcpy(&external_pitch, buf, 4);
-      float diff = fabs(joint_pitch - external_pitch);
-      orientation_diff_characteristic.setValue(diff);
+      external_orientation.readValue(buf, 12);
+      memcpy(&external_yaw, &buf[0], 4);
+      memcpy(&external_roll, &buf[4], 4);
+      memcpy(&external_pitch, &buf[8], 4);
+      float diff = fabs(joint_yaw - external_yaw);
+      memcpy(&buf[0], &diff, 4);
+      diff = fabs(joint_roll - external_roll);
+      memcpy(&buf[4], &diff, 4);
+      diff = fabs(joint_pitch - external_pitch);
+      memcpy(&buf[8], &diff, 4);
+      orientation_diff_characteristic.setValue(buf, 12);
     }
 
     if (!central.connected()) {
@@ -218,6 +225,8 @@ void updateBLE() {
 void updateHardware() {
   joint_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   joint_vector = joint_vector - calibrate_vector;
+  joint_yaw = joint_vector[0];
+  joint_roll = joint_vector[1];
   joint_pitch = joint_vector[2];
   error_vector = joint_vector - correct_joint_vector;
 

@@ -180,8 +180,7 @@ void updateState() {
 }
 
 bool keyFrameHit() {
-  
-  return fabs(pitch_diff - correct_pitch_diff) <= GRACE_ANGLE_DEGREES;
+  return ((fabs(pitch_diff - correct_pitch_diff) <= GRACE_ANGLE_DEGREES) && (fabs(yaw_diff - correct_yaw_diff) <= GRACE_ANGLE_DEGREES));
 }
 
 void updateBLE() {
