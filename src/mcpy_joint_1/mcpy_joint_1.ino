@@ -33,6 +33,7 @@ byte buf[12] = {0};
 // BLE variables
 BLEDevice central, external;
 BLEService joint_service(JOINT_SERVICE_UUID);
+BLECharacteristic joint_keyframe_hit_characteristic(JOINT_KEY_FRAME_HIT_CHARACTERISTIC_UUID, BLENotify, 1);
 BLECharacteristic orientation_diff_characteristic(ORIENTATION_DIFF_CHARACTERISTIC_UUID, BLERead, 12);
 BLEBoolCharacteristic reset_bno_joint_characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID, BLERead | BLEWrite);
 BLEBoolCharacteristic both_wiggles_characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID, BLERead);
@@ -66,6 +67,7 @@ void initBLE() {
   joint_service.addCharacteristic(reset_bno_joint_characteristic);
   joint_service.addCharacteristic(both_wiggles_characteristic);
   joint_service.addCharacteristic(key_frame_data_characteristic);
+  joint_service.addCharacteristic(joint_keyframe_hit_characteristic);
   BLE.addService(joint_service);
 
   // Setup external advertising.
@@ -157,6 +159,10 @@ void updateBLE() {
       if (external_wiggles && joint_wiggles) {
         both_wiggles_characteristic.writeValue(joint_wiggles);
       }
+      if (keyFrameHit()) {
+        buf[0] = true;
+        joint_keyframe_hit_characteristic.setValue(&buf[0], 1);
+      }
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
         if (reset_bno_joint) {
@@ -199,8 +205,8 @@ void updateBLE() {
       // joint_orientation.setValue(buf, 4);
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
-      float diff = fabs(joint_pitch - external_pitch);
-      orientation_diff_characteristic.setValue(diff);
+      // float diff = fabs(joint_pitch - external_pitch);
+      // orientation_diff_characteristic.setValue(diff);
     }
 
     if (!central.connected()) {
@@ -265,6 +271,13 @@ void updateHardware() {
   } 
 
   delay(SAMPLE_PERIOD_MS);
+}
+
+bool keyFrameHit() {
+  return ((error_vector[0] <= GRACE_ANGLE_DEGREES) && 
+  (error_vector[2] <= GRACE_ANGLE_DEGREES) && 
+  (actual_diff_vector[0] - correct_kf_vector[0] <= GRACE_ANGLE_DEGREES) &&
+  (actual_diff_vector[1] - correct_kf_vector[1] <= GRACE_ANGLE_DEGREES));
 }
 
 void setup() {
