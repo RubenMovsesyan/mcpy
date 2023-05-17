@@ -29,8 +29,8 @@ imu::Vector<3> correct_kf_vector, correct_joint_vector, correct_external_vector;
 // float joint_pitch, external_pitch, joint_yaw, external_yaw, joint_roll, external_roll;
 // float joint_pitch, joint_yaw, joint_roll;
 float correct_joint_pitch, correct_joint_yaw, correct_joint_roll;
+float correct_kf_pitch, correct_kf_yaw, correct_kf_roll;
 float external_pitch, external_yaw, external_roll;
-float kf_pitch, kf_yaw, kf_roll;
 bool bno_reset, external_wiggles;
 char printString [64];
 byte buf[12] = {0};
@@ -135,9 +135,9 @@ void updateBLE() {
       memcpy(&correct_joint_yaw, &buf[0], 4);
       memcpy(&correct_joint_roll, &buf[4], 4);
       memcpy(&correct_joint_pitch, &buf[8], 4);
-      memcpy(&kf_yaw, &buf[12], 4);
-      memcpy(&kf_roll, &buf[16], 4);
-      memcpy(&kf_pitch, &buf[20], 4);
+      memcpy(&correct_kf_yaw, &buf[12], 4);
+      memcpy(&correct_kf_roll, &buf[16], 4);
+      memcpy(&correct_kf_pitch, &buf[20], 4);
 
       // moving all the key frame data into vectors for ez math
       correct_joint_vector[0] = correct_joint_yaw;
