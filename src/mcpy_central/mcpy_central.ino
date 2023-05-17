@@ -125,7 +125,7 @@ void updateState() {
       if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
         // forward key frame data to joint
-        j_key_frame_data_char.setValue(buf, KEY_FRAME_SIZE);
+        j_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
         kf_time = millis();
         state = EXERCISE;
       }
@@ -133,11 +133,11 @@ void updateState() {
     break;
     case EXERCISE : {
       j_key_frame_hit_char.readValue(buf, DEFAULT_SIZE);
-      key_frame_hit_char.setValue(buf, DEFAULT_SIZE);
+      key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
       if (buf[0] == KF_SUCCESS) {
         state = RESPONSE;
       } else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
-        key_frame_hit_char.setValue(KF_MISS, DEFAULT_SIZE);
+        key_frame_hit_char.writeValue(KF_MISS, DEFAULT_SIZE);
         state = RESPONSE;
       }
     }
@@ -149,7 +149,7 @@ void updateState() {
         state = IDLE;
       } else if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
-        j_key_frame_data_char.setValue(buf, KEY_FRAME_SIZE);
+        j_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
         kf_time = millis();
         state = EXERCISE;
       }
