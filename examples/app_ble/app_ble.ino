@@ -12,13 +12,13 @@ BLEDevice app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEDoubleCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
 BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLERead | BLENotify);
-BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLEWrite);
+BLEByteCharacteristic control_char(CONTROL_BITS_UUID, BLEWrite);
 
 // Control bit definitions [which bit in the control_bits byte controls what :) ]
 #define CTRL_CAL_START 0
 #define CTRL_CAL_DONE 1
 #define CTRL_EXER_DONE 2
-byte control_bits = 0b00000000;
+byte control = 0b00000000;
 double pitch_diff = 0.0;
 double key_frame_data = 0.0;
 byte buf[8] = {0};
@@ -33,7 +33,7 @@ void setup() {
   // Construct the service to be advertised
   central_service.addCharacteristic(key_frame_data_characteristic);
   central_service.addCharacteristic(key_frame_hit_characteristic);
-  central_service.addCharacteristic(control_bits_characteristic);
+  central_service.addCharacteristic(control_char);
   BLE.addService(central_service);
 
   // Setup central advertising
@@ -57,15 +57,15 @@ void loop() {
       key_frame_hit_characteristic.writeValue((bool)random(0,2));
       // Read values from the app.
       key_frame_data_characteristic.readValue(&key_frame_data, 8);
-      control_bits_characteristic.readValue(control_bits);
+      control_char.readValue(control);
       Serial.print("KF.written(): ");
       Serial.print(key_frame_data_characteristic.written());
       Serial.print(", CB.written(): ");
-      Serial.print(control_bits_characteristic.written());
+      Serial.print(control_char.written());
       Serial.print(", key_frame_data: ");
       Serial.print(key_frame_data);
       Serial.print(", control_bits: ");
-      Serial.print(control_bits);
+      Serial.print(control);
       Serial.println();
     }
 

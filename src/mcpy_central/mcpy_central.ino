@@ -7,40 +7,36 @@
 using namespace mocopy;
 
 // BLE Global Variables
-BLEDevice joint, app;
-BLEService central_service(CENTRAL_SERVICE_UUID);
-BLECharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite, 24);
-BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify | BLERead);
-BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead | BLEWrite);
-BLECharacteristic orientation_diff_characteristic; // from joint device
-BLECharacteristic reset_bno_joint_characteristic; // from joint device
-BLECharacteristic both_wiggles_characteristic; // from joint device
+BLEDevice          joint, app;
+BLEService         central_service        (CENTRAL_SERVICE_UUID);
+BLECharacteristic  key_frame_data_char    (C_KEY_FRAME_DATA_UUID,   BLEWrite,             KEY_FRAME_SIZE);
+BLECharacteristic  key_frame_hit_char     (C_KEY_FRAME_HIT_UUID,    BLENotify,            DEFAULT_SIZE);
+BLECharacteristic  control_char           (CONTROL_UUID,            BLERead | BLEWrite,   DEFAULT_SIZE);
 
-typedef enum state_t {
-  idle_s,
-  wiggle_s,
-  calibrate_s,
-  pre_exercise_s,
-  exercise_s,
-  response_s
+// BLE joint characteristics
+BLECharacteristic   j_key_frame_data_char;
+BLECharacteristic   j_key_frame_hit_char;
+BLECharacteristic   j_snapshot_char;
+BLECharacteristic   both_calibrated_char;
+
+// State machine
+typedef enum State {
+  IDLE,
+  CALIBRATE,
+  SNAPSHOT,
+  PRE_EXERCISE,
+  EXERCISE,
+  RESPONSE
 };
-state_t state;
+State state;
 
-// Control bit definitions.
-#define CTRL_CAL_START 48
-#define CTRL_CAL_DONE 49
-#define CTRL_TAKE_SNAP 50
-#define CTRL_EXER_DONE 51
-byte control_bits = 0b00000000;
+// ===== Global varaibles =====
+uint8_t control = 0;
+bool both_calibrated;
+unsigned long kf_time;
 
-bool both_wiggles;
-unsigned long key_time;
-float joint_yaw, joint_roll, joint_pitch, correct_yaw_diff, correct_roll_diff, correct_pitch_diff, yaw_diff, roll_diff, pitch_diff;
-//joint_euler and correct_euler_diff is from device to save to buf
-//euler_diff is from joint
-
-// buffer for reading in from (peripheral) untyped characteristics
-byte buf[24] = {0};
+// buffer for reading in data from untyped characteristics
+byte buf[KEY_FRAME_SIZE] = {0};
 
 // This initializes the BLE server for the phone to connect to
 void initBLE() {
@@ -51,9 +47,9 @@ void initBLE() {
   Serial.println("Successfully initialized Bluetooth® Low Energy module.");
 
   // Construct the service to be advertised
-  central_service.addCharacteristic(key_frame_hit_characteristic);
-  central_service.addCharacteristic(key_frame_data_characteristic);
-  central_service.addCharacteristic(control_bits_characteristic);
+  central_service.addCharacteristic(key_frame_data_char);
+  central_service.addCharacteristic(key_frame_hit_char);
+  central_service.addCharacteristic(control_char);
   BLE.addService(central_service);
 
   // Setup central advertising
@@ -96,91 +92,71 @@ void initBLE() {
 // performs changes *on state transitions* and not exclusively within states.
 void updateState() {
   switch (state) {
-    case idle_s : {
-      control_bits_characteristic.readValue(&control_bits, 1);
-      if (control_bits == CTRL_CAL_START) {
+    case IDLE : {
+      control_char.readValue(&control, DEFAULT_SIZE);
+      if (control == CTRL_CAL_START) {
         Serial.println("Calibrating...");
-        control_bits = 0;
-        control_bits_characteristic.writeValue(control_bits);
-        state = wiggle_s;
+        state = CALIBRATE;
       }
     }
     break;
-    case wiggle_s : {
-      both_wiggles_characteristic.readValue(&both_wiggles, 1);
-      if (both_wiggles) { 
-        control_bits = CTRL_CAL_DONE;
-        control_bits_characteristic.writeValue(control_bits);
-        state = calibrate_s;
+    case CALIBRATE : {
+      both_calibrated_char.readValue(&both_calibrated, DEFAULT_SIZE);
+      if (both_calibrated) { 
+        control = CTRL_CAL_DONE;
+        control_char.writeValue(control);
+        state = SNAPSHOT;
       }
     }
     break;
-    case calibrate_s : {
-      control_bits_characteristic.readValue(&control_bits, 1);
-      if (control_bits == CTRL_TAKE_SNAP) {
+    case SNAPSHOT : {
+      control_char.readValue(&control, DEFAULT_SIZE);
+      if (control == CTRL_TAKE_SNAP) {
         Serial.println("Sending calibration data");
         buf[0] = true;
         // Forward the reset signal to other devices.
-        reset_bno_joint_characteristic.writeValue(buf[0], 1);
-        state = pre_exercise_s;
+        j_snapshot_char.writeValue(buf[0], DEFAULT_SIZE);
+        state = PRE_EXERCISE;
       }
     }
     break;
-    case pre_exercise_s : {
+    case PRE_EXERCISE : {
       // wait to receive the first key frame.
-      if (key_frame_data_characteristic.written()) {
-        key_frame_data_characteristic.readValue(buf, 24);
-        memcpy(&joint_yaw, &buf[0], 4);
-        memcpy(&joint_roll, &buf[4], 4);
-        memcpy(&joint_pitch, &buf[8], 4);
-        memcpy(&correct_yaw_diff, &buf[12], 4);
-        memcpy(&correct_roll_diff, &buf[16], 4);
-        memcpy(&correct_pitch_diff, &buf[20], 4);
-        key_time = millis();
-        state = exercise_s;
+      if (key_frame_data_char.written()) {
+        key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        // forward key frame data to joint
+        j_key_frame_data_char.setValue(buf, KEY_FRAME_SIZE);
+        kf_time = millis();
+        state = EXERCISE;
       }
     }
     break;
-    case exercise_s : {
-      orientation_diff_characteristic.readValue(buf, 12);
-      memcpy(&yaw_diff, &buf[0], 4);
-      memcpy(&roll_diff, &buf[4], 4);
-      memcpy(&pitch_diff, &buf[8], 4);
-      if (keyFrameHit()) {
-        key_frame_hit_characteristic.writeValue(KF_SUCCESS);
-        state = response_s;
-      } else if (millis() - key_time >= KEY_TIMEOUT_MS) {
-        key_frame_hit_characteristic.writeValue(KF_MISS);
-        state = response_s;
+    case EXERCISE : {
+      j_key_frame_hit_char.readValue(buf, DEFAULT_SIZE);
+      key_frame_hit_char.setValue(buf, DEFAULT_SIZE);
+      if (buf[0] == KF_SUCCESS) {
+        state = RESPONSE;
+      } else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
+        key_frame_hit_char.setValue(KF_MISS, DEFAULT_SIZE);
+        state = RESPONSE;
       }
     }
     break;
-    case response_s : {
+    case RESPONSE : {
       // wait to receive a new key frame or exercise_done.
-      control_bits_characteristic.readValue(&control_bits, 1);
-      if (control_bits == CTRL_EXER_DONE) {
-        control_bits = 0;
-        control_bits_characteristic.writeValue(control_bits);
-        state = idle_s;
-      } else if (key_frame_data_characteristic.written()) {
-        key_frame_data_characteristic.readValue(buf, 24);
-        memcpy(&joint_yaw, &buf[0], 4);
-        memcpy(&joint_roll, &buf[4], 4);
-        memcpy(&joint_pitch, &buf[8], 4);
-        memcpy(&correct_yaw_diff, &buf[12], 4);
-        memcpy(&correct_roll_diff, &buf[16], 4);
-        memcpy(&correct_pitch_diff, &buf[20], 4);
-        key_time = millis();
-        state = exercise_s;
+      control_char.readValue(&control, DEFAULT_SIZE);
+      if (control == CTRL_EXER_DONE) {
+        state = IDLE;
+      } else if (key_frame_data_char.written()) {
+        key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        j_key_frame_data_char.setValue(buf, KEY_FRAME_SIZE);
+        kf_time = millis();
+        state = EXERCISE;
       }
     }
     break;
     default : break;
   }
-}
-
-bool keyFrameHit() {
-  return ((fabs(pitch_diff - correct_pitch_diff) <= GRACE_ANGLE_DEGREES) && (fabs(yaw_diff - correct_yaw_diff) <= GRACE_ANGLE_DEGREES));
 }
 
 void updateBLE() {
@@ -190,6 +166,7 @@ void updateBLE() {
     Serial.print("Connected to app MAC: ");
     Serial.println(app.address());
 
+    // New connection
     if (joint.connect()) {
       Serial.println("Successfully connected to Joint.");
     } else {
@@ -209,14 +186,16 @@ void updateBLE() {
       return;
     }
 
-    orientation_diff_characteristic = joint.characteristic(ORIENTATION_DIFF_CHARACTERISTIC_UUID);
-    reset_bno_joint_characteristic = joint.characteristic(RESET_BNO_JOINT_CHARACTERISTIC_UUID);
-    both_wiggles_characteristic = joint.characteristic(BOTH_WIGGLES_CHARACTERISTIC_UUID);
+    j_key_frame_data_char = joint.characteristic(J_KEY_FRAME_DATA_UUID);
+    j_key_frame_hit_char = joint.characteristic(J_KEY_FRAME_HIT_UUID);
+    j_snapshot_char = joint.characteristic(J_SNAPSHOT_UUID);
+    both_calibrated_char = joint.characteristic(BOTH_CALIBRATED_UUID);
 
     while (app.connected() && joint.connected()) {
       updateState();
     }
 
+    // Disconnected
     if (!app.connected()) {
       Serial.print("Disconnected from app MAC: ");
       Serial.println(app.address());

@@ -7,12 +7,44 @@
 namespace mocopy {
 
 // ===== Developer definitions =====
-#define FORCE_SERIAL 1
-#define DEBUG_PRINT_DIRECTION 0
-#define DEBUG_PRINT_VECTORS 1
-#define DEBUG_PRINT_CALIBRATION 1
+#define FORCE_SERIAL                        1
+#define DEBUG_PRINT_DIRECTION               0
+#define DEBUG_PRINT_VECTORS                 1
+#define DEBUG_PRINT_CALIBRATION             1
+
+// ===== Size definitions =====
+#define KEY_FRAME_SIZE                      24
+#define ORIENTATION_SIZE                    12
+#define DEFAULT_SIZE                        1
+
+// ===== Control bit definitions =====
+#define CTRL_CAL_START                      48
+#define CTRL_CAL_DONE                       49
+#define CTRL_TAKE_SNAP                      50
+#define CTRL_EXER_DONE                      51
+
+// ===== Exercise definitions =====
+#define SAMPLE_PERIOD_MS                    10
+#define GRACE_ANGLE_DEGREES                 15
+#define KEY_TIMEOUT_MS                      1000
+#define KF_MISS                             0
+#define KF_SUCCESS                          1
+#define KF_PENDING                          2
 
 // ===== UUID definitions =====
+// --- Central UUIDS ---
+#define CENTRAL_SERVICE_UUID                "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
+#define C_KEY_FRAME_DATA_UUID               "b26dd24c-6bff-417c-aa16-c857b25b9c28"
+#define C_KEY_FRAME_HIT_UUID                "0180ef1a-ef68-11ed-a05b-0242ac120003"
+#define CONTROL_UUID                        "a10fb559-3be8-40e2-aaca-27721b853a71"
+// --- Joint UUIDS ---
+#define JOINT_SERVICE_UUID                  "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
+#define J_KEY_FRAME_DATA_UUID               "3d27cdef-2dd6-46b9-8b69-1a79825d04f2"
+#define J_KEY_FRAME_HIT_UUID                "3ffdaee3-9acf-42ad-abe5-b078671f26da"
+#define J_SNAPSHOT_UUID                     "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
+#define BOTH_CALIBRATED_UUID                "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
+
+
 // --- External UUIDs ---
 #define EXTERNAL_SERVICE_UUID "56176a63-d563-43f4-b239-636f41b63c6d"
 #define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
@@ -21,27 +53,11 @@ namespace mocopy {
 #define EXTERNAL_WIGGLES_CHARACTERISTIC_UUID "95a85051-8abe-451e-9de6-6e90bdc82b43"
 #define EXTERNAL_KEY_FRAME_DATA_CHARACTERISTIC_UUID "3f7507f6-fff0-47dc-a9e3-ffffea9331bf"
 #define JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID "43375973-2965-41f3-bbdd-cb413f4083f4"
-// --- Joint UUIDS ---
-#define JOINT_SERVICE_UUID "a9a95e92-26ea-4282-bd0c-7c8bd6c65a2b"
-#define RESET_BNO_JOINT_CHARACTERISTIC_UUID "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
-#define ORIENTATION_DIFF_CHARACTERISTIC_UUID "3ffdaee3-9acf-42ad-abe5-b078671f26da"
-#define BOTH_WIGGLES_CHARACTERISTIC_UUID "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
-// --- Central UUIDS ---
-#define CENTRAL_SERVICE_UUID "0c35e466-ad83-4651-88fa-0ff9d70fbf8c"
-#define KEY_FRAME_HIT_UUID "0180ef1a-ef68-11ed-a05b-0242ac120003"
-#define KEY_FRAME_DATA_UUID "b26dd24c-6bff-417c-aa16-c857b25b9c28"
-#define CONTROL_BITS_UUID "a10fb559-3be8-40e2-aaca-27721b853a71"
+
 
 // ===== Hardware definitions =====
 #define MAX_LED 255
 #define BASE_LED 20
-
-// ===== Exercise definitions =====
-#define SAMPLE_PERIOD_MS 10
-#define GRACE_ANGLE_DEGREES 15
-#define KEY_TIMEOUT_MS 1000
-#define KF_MISS 0
-#define KF_SUCCESS 1
 
 // ===== Other definitions =====
 #define ANGLE_SIZE_BYTES sizeof(float)
