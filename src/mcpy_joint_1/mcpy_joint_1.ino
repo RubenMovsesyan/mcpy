@@ -150,7 +150,7 @@ void updateBLE() {
     while (central.connected() && external.connected()) {
       if (!joint_wiggles) {
         // Only set joint_wiggles once.
-        joint_wiggles = calibrateBNO(bno, calibrate_vector);
+        joint_wiggles = calibrateBNO(bno);
       }
       external_wiggles_characteristic.readValue(&external_wiggles, 1);
       if (external_wiggles && joint_wiggles) {
