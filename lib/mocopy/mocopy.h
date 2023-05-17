@@ -25,7 +25,7 @@ namespace mocopy {
 
 // ===== Exercise definitions =====
 #define SAMPLE_PERIOD_MS                    10
-#define GRACE_ANGLE_DEGREES                 15
+#define GRACE_ANGLE                         15
 #define KEY_TIMEOUT_MS                      1000
 #define KF_MISS                             0
 #define KF_SUCCESS                          1
@@ -43,16 +43,12 @@ namespace mocopy {
 #define J_KEY_FRAME_HIT_UUID                "3ffdaee3-9acf-42ad-abe5-b078671f26da"
 #define J_SNAPSHOT_UUID                     "356e9144-fd4f-4ad7-ad60-983f551e5c0c"
 #define BOTH_CALIBRATED_UUID                "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
-
-
 // --- External UUIDs ---
-#define EXTERNAL_SERVICE_UUID "56176a63-d563-43f4-b239-636f41b63c6d"
-#define EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID "04308b2c-90dc-4984-8c45-81650dff60b8"
-#define RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID "c162bd0b-e48d-42c2-86f6-45ef8f615929"
-#define JOINT_ORIENTATION_CHARACTERISTIC_UUID "b99cc0f3-8cdc-4bb1-a51d-3927431f0985"
-#define EXTERNAL_WIGGLES_CHARACTERISTIC_UUID "95a85051-8abe-451e-9de6-6e90bdc82b43"
-#define EXTERNAL_KEY_FRAME_DATA_CHARACTERISTIC_UUID "3f7507f6-fff0-47dc-a9e3-ffffea9331bf"
-#define JOINT_KEY_FRAME_DATA_CHARACTERISTIC_UUID "43375973-2965-41f3-bbdd-cb413f4083f4"
+#define EXTERNAL_SERVICE_UUID               "56176a63-d563-43f4-b239-636f41b63c6d"
+#define E_ORIENTATION_UUID                  "04308b2c-90dc-4984-8c45-81650dff60b8"
+#define E_SNAPSHOT_UUID                     "c162bd0b-e48d-42c2-86f6-45ef8f615929"
+#define E_CALIBRATED_UUID                   "95a85051-8abe-451e-9de6-6e90bdc82b43"
+#define E_KEY_FRAME_DATA_UUID               "3f7507f6-fff0-47dc-a9e3-ffffea9331bf"
 
 
 // ===== Hardware definitions =====
@@ -80,7 +76,7 @@ bool isMostlyCalibrated(Adafruit_BNO055 &bno, uint8_t *system, uint8_t *gyro, ui
   return (*gyro >= 0 && *accel >= 1 && *mag >= 2);
 }
 
-bool calibrateBNO(Adafruit_BNO055 &bno) {
+bool getBNOCalibration(Adafruit_BNO055 &bno) {
   // calibration debug variables (returns 0 thru 3 to indicate how calibrated each device is).
   uint8_t system_cal, gyro_cal, accel_cal, mag_cal;
   char print_string[64];
@@ -106,6 +102,22 @@ imu::Vector<3> normalizeEulerVector(imu::Vector<3> &vec) {
   result[2] = (((int)vec[2] + 360) % 360) - 180;
 
   return result;
+}
+
+void parseOrientation(byte buf[ORIENTATION_SIZE], imu::Vector<3> &vec) {
+  memcpy(&vec[0], &buf[0], sizeof(float));
+  memcpy(&vec[1], &buf[4], sizeof(float));
+  memcpy(&vec[2], &buf[8], sizeof(float));
+}
+
+void parseKeyFrame(byte buf[KEY_FRAME_SIZE], imu::Vector<3> &joint_vec, imu::Vector<3> &diff_vec) {
+  memcpy(&joint_vec[0], &buf[0], sizeof(float));
+  memcpy(&joint_vec[1], &buf[4], sizeof(float));
+  memcpy(&joint_vec[2], &buf[8], sizeof(float));
+
+  memcpy(&diff_vec[0], &buf[12], sizeof(float));
+  memcpy(&diff_vec[1], &buf[16], sizeof(float));
+  memcpy(&diff_vec[2], &buf[20], sizeof(float));
 }
 
 void initHardware(Adafruit_BNO055 &bno, int up, int down, int left, int right) {

@@ -7,11 +7,11 @@
 using namespace mocopy;
 
 // BLE Global Variables
-BLEDevice          joint, app;
-BLEService         central_service        (CENTRAL_SERVICE_UUID);
-BLECharacteristic  key_frame_data_char    (C_KEY_FRAME_DATA_UUID,   BLEWrite,             KEY_FRAME_SIZE);
-BLECharacteristic  key_frame_hit_char     (C_KEY_FRAME_HIT_UUID,    BLERead | BLEWrite,   DEFAULT_SIZE);
-BLECharacteristic  control_char           (CONTROL_UUID,            BLERead | BLEWrite,   DEFAULT_SIZE);
+BLEDevice           joint, app;
+BLEService          central_service         (CENTRAL_SERVICE_UUID);
+BLECharacteristic   key_frame_data_char     (C_KEY_FRAME_DATA_UUID,   BLEWrite,             KEY_FRAME_SIZE);
+BLECharacteristic   key_frame_hit_char      (C_KEY_FRAME_HIT_UUID,    BLERead | BLEWrite,   DEFAULT_SIZE);
+BLECharacteristic   control_char            (CONTROL_UUID,            BLERead | BLEWrite,   DEFAULT_SIZE);
 
 // BLE joint characteristics
 BLECharacteristic   j_key_frame_data_char;
