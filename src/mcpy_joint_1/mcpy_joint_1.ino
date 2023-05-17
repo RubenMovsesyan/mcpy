@@ -126,7 +126,7 @@ void updateBLE() {
       return;
     }
     BLECharacteristic reset_bno_external_characteristic = external.characteristic(RESET_BNO_EXTERNAL_CHARACTERISTIC_UUID);
-    BLECharacteristic joint_orientation = external.characteristic(JOINT_ORIENTATION_CHARACTERISTIC_UUID);
+    // BLECharacteristic joint_orientation = external.characteristic(JOINT_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_wiggles_characteristic = external.characteristic(EXTERNAL_WIGGLES_CHARACTERISTIC_UUID);
 
@@ -148,22 +148,19 @@ void updateBLE() {
       external_wiggles_characteristic.readValue(&external_wiggles, 1);
       if (external_wiggles && joint_wiggles) {
         both_wiggles_characteristic.writeValue(joint_wiggles);
-      } else {
-        Serial.println("Capturing reference position in 5 seconds...");
-        calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-        Serial.println("Calibrated.");
       }
       if (reset_bno_joint_characteristic.written()){
         reset_bno_joint_characteristic.readValue(&reset_bno_joint, 1);
-        if (reset_bno_joint){
+        if (reset_bno_joint) {
           buf[0] = true;
           reset_bno_external_characteristic.writeValue(buf[0], 1);
           calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+          Serial.println("Calibrated.");
         }
       }
       updateHardware();
       memcpy(buf, &joint_pitch, 4);
-      joint_orientation.setValue(buf, 4);
+      // joint_orientation.setValue(buf, 4);
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
       float diff = fabs(joint_pitch - external_pitch);
