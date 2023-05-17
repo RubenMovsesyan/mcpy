@@ -179,5 +179,6 @@ void setup() {
 }
 
 void loop() {
+  
   updateBLE();
 }
