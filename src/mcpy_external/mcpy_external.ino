@@ -125,6 +125,10 @@ void updateBLE() {
     Serial.println(joint.address());
 
     while (joint.connected()) {
+        if (!external_wiggles) {
+        external_wiggles = calibrateBNO(bno);
+        external_wiggles_characteristic.setValue(true);
+      }
       updateHardware();
       // joint_orientation.readValue(buf, 12);
       // memcpy(&joint_yaw, &buf[0], 4);
@@ -171,14 +175,11 @@ void updateBLE() {
 void setup() {
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
-  calibrateBNO(bno, calibrate_vector);
-  external_wiggles_characteristic.writeValue(true);
   bno_reset = false;
   correct_external_vector = {0, 0, 0};
   initBLE();
 }
 
 void loop() {
-  
   updateBLE();
 }
