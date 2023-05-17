@@ -10,7 +10,7 @@ using namespace mocopy;
 BLEDevice joint, app;
 BLEService central_service(CENTRAL_SERVICE_UUID);
 BLEFloatCharacteristic key_frame_data_characteristic(KEY_FRAME_DATA_UUID, BLEWrite);
-BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify);
+BLEBoolCharacteristic key_frame_hit_characteristic(KEY_FRAME_HIT_UUID, BLENotify | BLERead);
 BLEByteCharacteristic control_bits_characteristic(CONTROL_BITS_UUID, BLERead | BLEWrite);
 BLECharacteristic pitch_diff_characteristic; // from joint device
 BLECharacteristic reset_bno_joint_characteristic; // from joint device
