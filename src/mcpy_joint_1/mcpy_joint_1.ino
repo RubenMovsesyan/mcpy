@@ -136,6 +136,7 @@ void updateBLE() {
     // BLECharacteristic joint_orientation = external.characteristic(JOINT_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_orientation = external.characteristic(EXTERNAL_ORIENTATION_CHARACTERISTIC_UUID);
     BLECharacteristic external_wiggles_characteristic = external.characteristic(EXTERNAL_WIGGLES_CHARACTERISTIC_UUID);
+    BLECharacteristic external_key_frame_data_characteristic = external.characteristic(EXTERNAL_KEY_FRAME_DATA_CHARACTERISTIC_UUID);
 
     if (!external_orientation || !external_wiggles_characteristic) {
       Serial.println("External device does not have the expected characteristic(s).");
@@ -150,7 +151,7 @@ void updateBLE() {
     while (central.connected() && external.connected()) {
       if (!joint_wiggles) {
         // Only set joint_wiggles once.
-        joint_wiggles = calibrateBNO(bno, calibrate_vector);
+        joint_wiggles = calibrateBNO(bno);
       }
       external_wiggles_characteristic.readValue(&external_wiggles, 1);
       if (external_wiggles && joint_wiggles) {
@@ -194,6 +195,7 @@ void updateBLE() {
 
       actual_diff_vector = actual_external_vector - joint_vector;
 
+      external_key_frame_data_characteristic.setValue(buf, 24);
       // joint_orientation.setValue(buf, 4);
       external_orientation.readValue(buf, 4);
       memcpy(&external_pitch, buf, 4);
