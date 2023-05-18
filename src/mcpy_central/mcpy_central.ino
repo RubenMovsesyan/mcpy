@@ -117,6 +117,7 @@ void updateState() {
     break;
     case calibrate_s : {
       control_bits_characteristic.readValue(&control_bits, 1);
+      Serial.println(control_bits);
       if (control_bits == CTRL_TAKE_SNAP) {
         Serial.println("Sending calibration data");
         buf[0] = true;

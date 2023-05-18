@@ -129,6 +129,7 @@ void updateBLE() {
         external_wiggles = calibrateBNO(bno);
         external_wiggles_characteristic.setValue(true);
       }
+
       updateHardware();
       // joint_orientation.readValue(buf, 12);
       // memcpy(&joint_yaw, &buf[0], 4);
@@ -162,7 +163,7 @@ void updateBLE() {
       if (reset_BNO.written()) {
         reset_BNO.readValue(&bno_reset, 1);
         if (bno_reset) {
-          calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+          takeSnapshot(bno, calibrate_vector);
         }
       }
     }

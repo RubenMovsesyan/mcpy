@@ -11,10 +11,10 @@ using namespace mocopy;
 // --------------------------- Hardware defines --------------------
 
 // Motors for joint device
-#define UP_MOTOR        D9
-#define DOWN_MOTOR      D8
-#define LEFT_MOTOR      D7
-#define RIGHT_MOTOR     D6
+#define UP_MOTOR        D8
+#define DOWN_MOTOR      D7
+#define LEFT_MOTOR      D6
+#define RIGHT_MOTOR     D9
 
 // ----- Global Variables -----
 Adafruit_BNO055 bno;
@@ -162,7 +162,7 @@ void updateBLE() {
         if (reset_bno_joint) {
           buf[0] = true;
           reset_bno_external_characteristic.writeValue(buf[0], 1);
-          calibrate_vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+          takeSnapshot(bno, calibrate_vector);
           Serial.println("Calibrated.");
         }
       }
