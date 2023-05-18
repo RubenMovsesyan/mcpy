@@ -83,6 +83,7 @@ bool getBNOCalibration(Adafruit_BNO055 &bno) {
   return isMostlyCalibrated(bno, &system_cal, &gyro_cal, &accel_cal, &mag_cal, print_string);
 }
 
+// probably not needed anymore
 void takeSnapshot(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   Serial.println("Capturing reference position in 5 seconds...");
   
