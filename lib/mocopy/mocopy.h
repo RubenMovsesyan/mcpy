@@ -79,6 +79,18 @@ void takeSnapshot(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   Serial.println("Calibrated.");
 }
 
+void reverseBytes(byte* buf, int interval, int interval_count) {
+    byte temps[interval];
+    for (int i = 0; i < interval_count; i++) {
+        for (int j = (i * interval); j < ((i+1)*interval); j++) {
+            temps[j-(i * interval)] = buf[j];
+        }
+        for (int j = (i * interval); j < ((i+1)*interval); j++) {
+            buf[j] = temps[((i+1)*interval) - 1 - j];
+        }
+    }
+}
+
 // Raw BNO vectors are within the following ranges:
 // <0 to 360, -90 to +90, -180 to +180>
 // We want to use processed vectors in these ranges:
