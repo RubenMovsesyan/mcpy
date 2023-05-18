@@ -132,6 +132,14 @@ void parseKeyFrame(byte buf[KEY_FRAME_SIZE], imu::Vector<3> &joint_vec, imu::Vec
   diff_vec[2] = d3;
 }
 
+void printBytes(byte* buf, int num_bytes) {
+  for (int i = 0; i < num_bytes; i++) {
+    Serial.print(buf[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+}
+
 void reverseBytes(byte* buf, int interval, int interval_count) {
     byte temps[interval];
     for (int i = 0; i < interval_count; i++) {

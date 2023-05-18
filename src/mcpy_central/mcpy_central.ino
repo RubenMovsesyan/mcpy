@@ -127,6 +127,9 @@ void updateState() {
       // wait to receive the first key frame.
       if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        printBytes(buf, KEY_FRAME_SIZE);
+        reverseBytes(buf, sizeof(float), 6);
+        printBytes(buf, KEY_FRAME_SIZE);
         // START - DEBUG STUFF
         parseKeyFrame(buf, debug_joint_vec, debug_diff_vec);
         Serial.print("Joint: ");
@@ -145,12 +148,17 @@ void updateState() {
       j_key_frame_hit_char.readValue(buf, DEFAULT_SIZE);
       if (buf[0] == KF_SUCCESS) {
         key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
+        // buf[0] = KF_PENDING;
+        // j_key_frame_hit_char.writeValue(buf[0], DEFAULT_SIZE);
+        Serial.println("Key frame hit!");
         state = RESPONSE;
-      } else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
-        buf[0] = KF_MISS;
-        key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
-        state = RESPONSE;
-      }
+      } 
+      // else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
+      //   buf[0] = KF_MISS;
+      //   Serial.println("TIMEOUT");
+      //   key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
+      //   state = RESPONSE;
+      // }
     }
     break;
     case RESPONSE : {
@@ -160,6 +168,10 @@ void updateState() {
         state = IDLE;
       } else if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        // START - DEBUG STUFF
+        printBytes(buf, KEY_FRAME_SIZE);
+        reverseBytes(buf, sizeof(float), 6);
+        printBytes(buf, KEY_FRAME_SIZE);
         // START - DEBUG STUFF
         parseKeyFrame(buf, debug_joint_vec, debug_diff_vec);
         Serial.print("Joint: ");
