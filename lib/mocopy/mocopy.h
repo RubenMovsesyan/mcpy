@@ -61,7 +61,7 @@ namespace mocopy {
 uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
 uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
 
-void printVector(char* print_string, imu::Vector<3> &vec, bool newline = false) {
+void printVector(char* print_string, imu::Vector<3> vec, bool newline = false) {
   sprintf(print_string, "vector: <%f, %f, %f>", vec[0], vec[1], vec[2]);
   Serial.print(print_string);
   if (newline) Serial.println();
@@ -83,6 +83,7 @@ bool getBNOCalibration(Adafruit_BNO055 &bno) {
   return isMostlyCalibrated(bno, &system_cal, &gyro_cal, &accel_cal, &mag_cal, print_string);
 }
 
+// probably not needed anymore
 void takeSnapshot(Adafruit_BNO055 &bno, imu::Vector<3> &calibrate_vector) {
   Serial.println("Capturing reference position in 5 seconds...");
   
@@ -111,13 +112,24 @@ void parseOrientation(byte buf[ORIENTATION_SIZE], imu::Vector<3> &vec) {
 }
 
 void parseKeyFrame(byte buf[KEY_FRAME_SIZE], imu::Vector<3> &joint_vec, imu::Vector<3> &diff_vec) {
-  memcpy(&joint_vec[0], &buf[0], sizeof(float));
-  memcpy(&joint_vec[1], &buf[4], sizeof(float));
-  memcpy(&joint_vec[2], &buf[8], sizeof(float));
+  float j1 = 0, j2 = 0, j3 = 0;
+  float d1 = 0, d2 = 0, d3 = 0;
 
-  memcpy(&diff_vec[0], &buf[12], sizeof(float));
-  memcpy(&diff_vec[1], &buf[16], sizeof(float));
-  memcpy(&diff_vec[2], &buf[20], sizeof(float));
+  memcpy((void*)&j1, &buf[0], sizeof(float));
+  memcpy((void*)&j2, &buf[4], sizeof(float));
+  memcpy((void*)&j3, &buf[8], sizeof(float));
+
+  memcpy((void*)&d1, &buf[12], sizeof(float));
+  memcpy((void*)&d2, &buf[16], sizeof(float));
+  memcpy((void*)&d3, &buf[20], sizeof(float));
+
+  joint_vec[0] = j1;
+  joint_vec[1] = j2;
+  joint_vec[2] = j3;
+
+  diff_vec[0] = d1;
+  diff_vec[1] = d2;
+  diff_vec[2] = d3;
 }
 
 void reverseBytes(byte* buf, int interval, int interval_count) {

@@ -19,6 +19,9 @@ BLECharacteristic   j_key_frame_hit_char;
 BLECharacteristic   j_snapshot_char;
 BLECharacteristic   both_calibrated_char;
 
+char print_string[64];
+imu::Vector<3> debug_joint_vec, debug_diff_vec;
+
 // State machine
 typedef enum State {
   IDLE,
@@ -124,6 +127,13 @@ void updateState() {
       // wait to receive the first key frame.
       if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        // START - DEBUG STUFF
+        parseKeyFrame(buf, debug_joint_vec, debug_diff_vec);
+        Serial.print("Joint: ");
+        printVector(print_string, debug_joint_vec, false);
+        Serial.print(", Diff: ");
+        printVector(print_string, debug_diff_vec, true);
+        // END - DEBUG STUFF
         // forward key frame data to joint
         j_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
         kf_time = millis();
@@ -137,7 +147,8 @@ void updateState() {
         key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
         state = RESPONSE;
       } else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
-        key_frame_hit_char.writeValue(KF_MISS, DEFAULT_SIZE);
+        buf[0] = KF_MISS;
+        key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
         state = RESPONSE;
       }
     }
@@ -149,6 +160,13 @@ void updateState() {
         state = IDLE;
       } else if (key_frame_data_char.written()) {
         key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+        // START - DEBUG STUFF
+        parseKeyFrame(buf, debug_joint_vec, debug_diff_vec);
+        Serial.print("Joint: ");
+        printVector(print_string, debug_joint_vec, false);
+        Serial.print(", Diff: ");
+        printVector(print_string, debug_diff_vec, true);
+        // END - DEBUG STUFF
         j_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
         kf_time = millis();
         state = EXERCISE;

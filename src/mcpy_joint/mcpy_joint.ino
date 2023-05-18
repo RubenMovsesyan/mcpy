@@ -11,16 +11,18 @@ using namespace mocopy;
 // --------------------------- Hardware defines --------------------
 
 // Motors for joint device
-#define UP_MOTOR        D9
-#define DOWN_MOTOR      D8
-#define LEFT_MOTOR      D7
-#define RIGHT_MOTOR     D6
+#define UP_MOTOR        D6
+#define DOWN_MOTOR      D7
+#define LEFT_MOTOR      D9
+#define RIGHT_MOTOR     D8
 
 // ----- Global Variables -----
 Adafruit_BNO055 bno;
 imu::Vector<3> kf_joint_vec, kf_diff_vec;
-imu::Vector<3> external_vec, joint_vec, error_vec, snap_vec;
-bool external_calibrated, joint_calibrated;
+imu::Vector<3> external_vec, joint_vec, error_vec, snap_vec, diff_vec;
+bool external_calibrated = false, joint_calibrated = false;
+bool both_calibrated_fuse = false;
+//   ^ used to prevent constants writes to the both_calibrated characteristic.
 
 char print_string[64];
 // buffer for sending and recieving float data over BLE
@@ -141,14 +143,21 @@ void updateBLE() {
     
     while (central.connected() && external.connected()) {
       if (!joint_calibrated) {
-        // only set joint calibration once
+        // only set joint calibration once.
         joint_calibrated = getBNOCalibration(bno);
       }
 
       // Testing calibration of both devices
-      e_calibrated_char.readValue(&external_calibrated, DEFAULT_SIZE);
-      if (external_calibrated && joint_calibrated) {
+      if (!external_calibrated) {
+        // only read external calibration once.
+        e_calibrated_char.readValue(&external_calibrated, DEFAULT_SIZE);
+      }
+
+      if (external_calibrated && joint_calibrated && !both_calibrated_fuse) {
+        // both_calibrated_fuse is used to ensure this if statement is only ever
+        // entered once to prevent constant writes which might slow the device.
         both_calibrated_char.writeValue(&joint_calibrated, DEFAULT_SIZE);
+        both_calibrated_fuse = true; // trip the fuse, never enter this if again.
       }
 
       if (snapshot_char.written()){
@@ -164,6 +173,7 @@ void updateBLE() {
       updateVectors();
       updateHardware();
 
+      // Considering commenting this out to improve performance?
       delay(SAMPLE_PERIOD_MS);
     }
 
@@ -184,31 +194,30 @@ void updateVectors() {
   e_orientation_char.readValue(buf, ORIENTATION_SIZE);
   parseOrientation(buf, external_vec);
 
-
-  key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
-  e_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
-  parseKeyFrame(buf, kf_joint_vec, kf_diff_vec);
+  if (key_frame_data_char.written()) {
+    key_frame_data_char.readValue(buf, KEY_FRAME_SIZE);
+    e_key_frame_data_char.writeValue(buf, KEY_FRAME_SIZE);
+    parseKeyFrame(buf, kf_joint_vec, kf_diff_vec);
+  }
 
   joint_vec = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   joint_vec = joint_vec - snap_vec;
   error_vec = joint_vec - kf_joint_vec;
+  diff_vec = external_vec - joint_vec;
 
   if (DEBUG_PRINT_VECTORS) {
-    char vector_str[128];
-    sprintf(vector_str, "eV: <%f, %f, %f>", 
-      error_vec[0],
-      error_vec[1],
-      error_vec[2]
-    );
-
-    Serial.println(vector_str);
+    Serial.print("Diff: ");
+    printVector(print_string, diff_vec, false);
+    Serial.print(" Joint: ");
+    printVector(print_string, joint_vec, true);
   }
 }
 
 void updateHardware() {
   // Calculate the vibration strength
   vibes[0] = max(0.0, min((uint8_t)(fabs(error_vec[0])) - GRACE_ANGLE + BASE_LED, MAX_LED));
-  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vec[2])) - GRACE_ANGLE + BASE_LED, MAX_LED));
+  // Removed 2 * fabs(error_vec[2]).
+  vibes[2] = max(0.0, min((uint8_t)(fabs(error_vec[2])) - GRACE_ANGLE + BASE_LED, MAX_LED));
 
   if (error_vec[0] >= GRACE_ANGLE) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Right, ");
@@ -237,6 +246,18 @@ void updateHardware() {
     analogWrite(UP_MOTOR, 0);
     analogWrite(DOWN_MOTOR, 0);
   }
+}
+
+bool keyFrameHit() {
+  // Note that diff is also compared to +/- GRACE_ANGLE.
+  return (
+    (fabs(joint_vec[0] - kf_joint_vec[0]) <= GRACE_ANGLE) &&
+    // fabs((joint_vec[1] - kf_joint_vec[1]) <= GRACE_ANGLE) && // don't care about roll
+    (fabs(joint_vec[2] - kf_joint_vec[2]) <= GRACE_ANGLE) &&
+    (fabs(diff_vec[0] - kf_diff_vec[0]) <= GRACE_ANGLE) &&
+    // fabs((diff_vec[0] - kf_diff_vec[0]) <= GRACE_ANGLE) && // don't care about roll
+    (fabs(diff_vec[2] - kf_diff_vec[2]) <= GRACE_ANGLE)
+  );
 }
 
 void setup() {
