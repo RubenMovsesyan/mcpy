@@ -112,13 +112,24 @@ void parseOrientation(byte buf[ORIENTATION_SIZE], imu::Vector<3> &vec) {
 }
 
 void parseKeyFrame(byte buf[KEY_FRAME_SIZE], imu::Vector<3> &joint_vec, imu::Vector<3> &diff_vec) {
-  memcpy(&joint_vec[0], &buf[0], sizeof(float));
-  memcpy(&joint_vec[1], &buf[4], sizeof(float));
-  memcpy(&joint_vec[2], &buf[8], sizeof(float));
+  float j1 = 0, j2 = 0, j3 = 0;
+  float d1 = 0, d2 = 0, d3 = 0;
 
-  memcpy(&diff_vec[0], &buf[12], sizeof(float));
-  memcpy(&diff_vec[1], &buf[16], sizeof(float));
-  memcpy(&diff_vec[2], &buf[20], sizeof(float));
+  memcpy((void*)&j1, &buf[0], sizeof(float));
+  memcpy((void*)&j2, &buf[4], sizeof(float));
+  memcpy((void*)&j3, &buf[8], sizeof(float));
+
+  memcpy((void*)&d1, &buf[12], sizeof(float));
+  memcpy((void*)&d2, &buf[16], sizeof(float));
+  memcpy((void*)&d3, &buf[20], sizeof(float));
+
+  joint_vec[0] = j1;
+  joint_vec[1] = j2;
+  joint_vec[2] = j3;
+
+  diff_vec[0] = d1;
+  diff_vec[1] = d2;
+  diff_vec[2] = d3;
 }
 
 void initHardware(Adafruit_BNO055 &bno, int up, int down, int left, int right) {
