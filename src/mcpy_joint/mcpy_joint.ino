@@ -148,7 +148,7 @@ void updateBLE() {
       // Testing calibration of both devices
       e_calibrated_char.readValue(&external_calibrated, DEFAULT_SIZE);
       if (external_calibrated && joint_calibrated) {
-        both_calibrated_char.writeValue(joint_calibrated);
+        both_calibrated_char.writeValue(&joint_calibrated, DEFAULT_SIZE);
       }
 
       if (snapshot_char.written()){
@@ -207,8 +207,8 @@ void updateVectors() {
 
 void updateHardware() {
   // Calculate the vibration strength
-  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vector[0])) - GRACE_ANGLE + BASE_LED, MAX_LED));
-  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vector[2])) - GRACE_ANGLE + BASE_LED, MAX_LED));
+  vibes[0] = max(0.0, min((uint8_t)(fabs(error_vec[0])) - GRACE_ANGLE + BASE_LED, MAX_LED));
+  vibes[2] = max(0.0, min((uint8_t)(2 * fabs(error_vec[2])) - GRACE_ANGLE + BASE_LED, MAX_LED));
 
   if (error_vec[0] >= GRACE_ANGLE) {
     if (DEBUG_PRINT_DIRECTION) Serial.print("Right, ");
@@ -240,10 +240,8 @@ void updateHardware() {
 }
 
 void setup() {
-  correct_vector = {0, 0, 0};
   initSerial();
   initHardware(bno, UP_MOTOR, DOWN_MOTOR, LEFT_MOTOR, RIGHT_MOTOR);
-  reset_bno_joint = false;
   initBLE();
 }
 

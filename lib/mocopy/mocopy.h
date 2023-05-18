@@ -45,10 +45,10 @@ namespace mocopy {
 #define BOTH_CALIBRATED_UUID                "caa1a3f9-0c78-476f-85f7-6adbb708a45a"
 // --- External UUIDs ---
 #define EXTERNAL_SERVICE_UUID               "56176a63-d563-43f4-b239-636f41b63c6d"
-#define E_ORIENTATION_UUID                  "04308b2c-90dc-4984-8c45-81650dff60b8"
 #define E_SNAPSHOT_UUID                     "c162bd0b-e48d-42c2-86f6-45ef8f615929"
-#define E_CALIBRATED_UUID                   "95a85051-8abe-451e-9de6-6e90bdc82b43"
 #define E_KEY_FRAME_DATA_UUID               "3f7507f6-fff0-47dc-a9e3-ffffea9331bf"
+#define E_ORIENTATION_UUID                  "04308b2c-90dc-4984-8c45-81650dff60b8"
+#define E_CALIBRATED_UUID                   "95a85051-8abe-451e-9de6-6e90bdc82b43"
 
 
 // ===== Hardware definitions =====
