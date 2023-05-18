@@ -61,7 +61,7 @@ namespace mocopy {
 uint8_t min(uint8_t a, uint8_t b) {if (a <= b) return a; else return b; }
 uint8_t max(uint8_t a, uint8_t b) {if (a >= b) return a; else return b; }
 
-void printVector(char* print_string, imu::Vector<3> &vec, bool newline = false) {
+void printVector(char* print_string, imu::Vector<3> vec, bool newline = false) {
   sprintf(print_string, "vector: <%f, %f, %f>", vec[0], vec[1], vec[2]);
   Serial.print(print_string);
   if (newline) Serial.println();
