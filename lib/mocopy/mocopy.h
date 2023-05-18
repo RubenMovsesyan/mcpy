@@ -120,6 +120,18 @@ void parseKeyFrame(byte buf[KEY_FRAME_SIZE], imu::Vector<3> &joint_vec, imu::Vec
   memcpy(&diff_vec[2], &buf[20], sizeof(float));
 }
 
+void reverseBytes(byte* buf, int interval, int interval_count) {
+    byte temps[interval];
+    for (int i = 0; i < interval_count; i++) {
+        for (int j = (i * interval); j < ((i+1)*interval); j++) {
+            temps[j-(i * interval)] = buf[j];
+        }
+        for (int j = (i * interval); j < ((i+1)*interval); j++) {
+            buf[j] = temps[((i+1)*interval) - 1 - j];
+        }
+    }
+}
+
 void initHardware(Adafruit_BNO055 &bno, int up, int down, int left, int right) {
   if (!bno.begin(OPERATION_MODE_NDOF)) {
     Serial.println("\nFailed to find BNO055 chip");
