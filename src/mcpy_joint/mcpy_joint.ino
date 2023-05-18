@@ -11,10 +11,10 @@ using namespace mocopy;
 // --------------------------- Hardware defines --------------------
 
 // Motors for joint device
-#define UP_MOTOR        D9
-#define DOWN_MOTOR      D8
-#define LEFT_MOTOR      D7
-#define RIGHT_MOTOR     D6
+#define UP_MOTOR        D6
+#define DOWN_MOTOR      D7
+#define LEFT_MOTOR      D9
+#define RIGHT_MOTOR     D8
 
 // ----- Global Variables -----
 Adafruit_BNO055 bno;

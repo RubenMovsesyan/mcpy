@@ -137,7 +137,8 @@ void updateState() {
         key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
         state = RESPONSE;
       } else if (millis() - kf_time >= KEY_TIMEOUT_MS) {
-        key_frame_hit_char.writeValue(KF_MISS, DEFAULT_SIZE);
+        buf[0] = KF_MISS;
+        key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
         state = RESPONSE;
       }
     }
