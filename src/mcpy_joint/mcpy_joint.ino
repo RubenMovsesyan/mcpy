@@ -206,8 +206,8 @@ void updateVectors() {
   diff_vec = external_vec - joint_vec;
 
   if (keyFrameHit()) {
-    // buf[0] = KF_SUCCESS;
-    // key_frame_hit_char.writeValue(buf[0], DEFAULT_SIZE);
+    buf[0] = KF_SUCCESS;
+    key_frame_hit_char.writeValue(buf[0], DEFAULT_SIZE);
   }
 
   if (DEBUG_PRINT_VECTORS) {

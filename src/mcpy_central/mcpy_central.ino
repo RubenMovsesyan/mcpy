@@ -148,8 +148,8 @@ void updateState() {
       j_key_frame_hit_char.readValue(buf, DEFAULT_SIZE);
       if (buf[0] == KF_SUCCESS) {
         key_frame_hit_char.writeValue(buf, DEFAULT_SIZE);
-        // buf[0] = KF_PENDING;
-        // j_key_frame_hit_char.writeValue(buf[0], DEFAULT_SIZE);
+        buf[0] = KF_PENDING;
+        j_key_frame_hit_char.writeValue(buf[0], DEFAULT_SIZE);
         Serial.println("Key frame hit!");
         state = RESPONSE;
       } 
