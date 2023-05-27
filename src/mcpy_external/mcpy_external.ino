@@ -77,10 +77,10 @@ void updateVectors() {
 
   if (DEBUG_PRINT_VECTORS) {
     char vector_str[128];
-    sprintf(vector_str, "eV: <%f, %f, %f>", 
-      error_vec[0],
-      error_vec[1],
-      error_vec[2]
+    sprintf(vector_str, "external_vector: <%f, %f, %f>", 
+      external_vec[0],
+      external_vec[1],
+      external_vec[2]
     );
 
     Serial.println(vector_str);
